@@ -128,4 +128,4 @@ To contribute without write access: fork the repo on GitHub, push to your fork, 
 
 ## License
 
-MIT.
+MIT. See [LICENSE](LICENSE) in this repository.
