@@ -1,7 +1,8 @@
 import type { InstanceBase } from '@companion-module/base'
 import type { ZoomRoomsConfig } from './config.js'
 import type { CavzrcState } from './utils.js'
-
+const osc = require('osc') // eslint-disable-line
+const dgram = require('dgram') // eslint-disable-line
 export interface ZoomRoomsInstance extends InstanceBase<ZoomRoomsConfig> {
 	config: ZoomRoomsConfig
 	state: CavzrcState
@@ -16,7 +17,7 @@ export class OSC {
 
 	constructor(instance: ZoomRoomsInstance) {
 		this.instance = instance
-		this.sendSocket = require('dgram').createSocket({ type: 'udp4' })
+		this.sendSocket = dgram.createSocket({ type: 'udp4' })
 		this.connect()
 	}
 
@@ -39,7 +40,6 @@ export class OSC {
 
 	public sendCommand(path: string, args: (string | number | boolean)[] = []): void {
 		const oscArgs = args.map((a) => (typeof a === 'boolean' ? (a ? 1 : 0) : a))
-		const osc = require('osc')
 		const msg = { address: path.startsWith('/') ? path : `/${path}`, args: oscArgs }
 		let buf: Buffer
 		try {
@@ -59,9 +59,6 @@ export class OSC {
 			this.instance.log('info', 'rx_port is 0; not listening for OSC outputs')
 			return
 		}
-
-		const dgram = require('dgram')
-		const osc = require('osc')
 
 		const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
 		this.udpSocket = socket
@@ -201,7 +198,7 @@ export class OSC {
 		const a = args[i]
 		if (!a) return undefined
 		if (typeof a.value === 'string') return a.value
-		if (a.value !== undefined && a.value !== null) return String(a.value)
+		if (typeof a.value === 'number' || typeof a.value === 'boolean') return String(a.value)
 		return undefined
 	}
 

@@ -56,9 +56,13 @@ function getRoomTarget(opt: Record<string, unknown>): { targetType: TargetType; 
 	const targetType = (opt.targetType as TargetType) || 'roomIndex'
 	const roomArg: string | number | undefined =
 		targetType === 'roomID'
-			? String(opt.roomID ?? '')
+			? typeof opt.roomID === 'string'
+				? opt.roomID
+				: ''
 			: targetType === 'roomName'
-				? String(opt.roomName ?? '')
+				? typeof opt.roomName === 'string'
+					? opt.roomName
+					: ''
 				: targetType === 'roomIndex'
 					? Number(opt.roomIndex) || 1
 					: undefined
@@ -131,14 +135,23 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				const targetType = (opt.targetType as TargetType) || 'roomIndex'
 				const roomArg: string | number | undefined =
 					targetType === 'roomID'
-						? String(opt.roomID ?? '')
+						? typeof opt.roomID === 'string'
+							? opt.roomID
+							: ''
 						: targetType === 'roomName'
-							? String(opt.roomName ?? '')
+							? typeof opt.roomName === 'string'
+								? opt.roomName
+								: ''
 							: targetType === 'roomIndex'
 								? Number(opt.roomIndex) || 1
 								: undefined
 				const { path, args } = buildRoomPath(targetType, 'joinMeeting', roomArg)
-				send(path, [...args, String(opt.meetingID ?? ''), String(opt.meetingPass ?? ''), String(opt.userName ?? '')])
+				send(path, [
+					...args,
+					typeof opt.meetingID === 'string' ? opt.meetingID : '',
+					typeof opt.meetingPass === 'string' ? opt.meetingPass : '',
+					typeof opt.userName === 'string' ? opt.userName : '',
+				])
 			},
 		},
 		startMeeting: {
@@ -179,9 +192,13 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				const targetType = (opt.targetType as TargetType) || 'roomIndex'
 				const roomArg: string | number | undefined =
 					targetType === 'roomID'
-						? String(opt.roomID ?? '')
+						? typeof opt.roomID === 'string'
+							? opt.roomID
+							: ''
 						: targetType === 'roomName'
-							? String(opt.roomName ?? '')
+							? typeof opt.roomName === 'string'
+								? opt.roomName
+								: ''
 							: targetType === 'roomIndex'
 								? Number(opt.roomIndex) || 1
 								: undefined
@@ -227,9 +244,13 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				const targetType = (opt.targetType as TargetType) || 'roomIndex'
 				const roomArg: string | number | undefined =
 					targetType === 'roomID'
-						? String(opt.roomID ?? '')
+						? typeof opt.roomID === 'string'
+							? opt.roomID
+							: ''
 						: targetType === 'roomName'
-							? String(opt.roomName ?? '')
+							? typeof opt.roomName === 'string'
+								? opt.roomName
+								: ''
 							: targetType === 'roomIndex'
 								? Number(opt.roomIndex) || 1
 								: undefined
@@ -304,7 +325,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setNDIParticipantSelection', (o) => [
 				Number(o.channel_num) || 1,
-				String(o.exact_zoom_username ?? ''),
+				typeof o.exact_zoom_username === 'string' ? o.exact_zoom_username : '',
 			]),
 		},
 		setNDIGallerySelection: {
@@ -316,7 +337,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setNDIGallerySelection', (o) => [
 				Number(o.channel_num) || 1,
-				Number(o.gallery_index) ?? 0,
+				Number(o.gallery_index || 0),
 			]),
 		},
 		setNDIScreenshareSelection: {
@@ -328,7 +349,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setNDIScreenshareSelection', (o) => [
 				Number(o.channel_num) || 1,
-				Number(o.screenshare_index) ?? 0,
+				Number(o.screenshare_index) || 0,
 			]),
 		},
 		setNDIPinGroupSelection: {
@@ -340,7 +361,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setNDIPinGroupSelection', (o) => [
 				Number(o.channel_num) || 1,
-				Number(o.pin_group_index) ?? 0,
+				Number(o.pin_group_index) || 0,
 			]),
 		},
 		getNDIChannelConfig: {
@@ -362,7 +383,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Mode index', id: 'mode_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setHWIOMode', (o) => [Number(o.channel_num) || 1, Number(o.mode_index) ?? 0]),
+			callback: roomCommandWithOpts('setHWIOMode', (o) => [Number(o.channel_num) || 1, Number(o.mode_index) || 0]),
 		},
 		setHWIOInputSelection: {
 			name: 'HWIO: Set input selection',
@@ -373,7 +394,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setHWIOInputSelection', (o) => [
 				Number(o.channel_num) || 1,
-				Number(o.video_index) ?? 0,
+				Number(o.video_index) || 0,
 			]),
 		},
 		setHWIOContentOff: {
@@ -425,7 +446,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setHWIOResolutionFrameRate', (o) => [
 				Number(o.channel_num) || 1,
-				String(o.resolution_framerate ?? ''),
+				typeof o.resolution_framerate === 'string' ? o.resolution_framerate : '',
 			]),
 		},
 		setHWIOAudioMix: {
@@ -437,7 +458,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setHWIOAudioMix', (o) => [
 				Number(o.channel_num) || 1,
-				Number(o.setting_index) ?? 0,
+				Number(o.setting_index) || 0,
 			]),
 		},
 		setHWIOParticipantSelection: {
@@ -449,7 +470,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setHWIOParticipantSelection', (o) => [
 				Number(o.channel_num) || 1,
-				String(o.zoom_username ?? ''),
+				typeof o.zoom_username === 'string' ? o.zoom_username : '',
 			]),
 		},
 		setHWIOGallerySelection: {
@@ -461,7 +482,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setHWIOGallerySelection', (o) => [
 				Number(o.channel_num) || 1,
-				Number(o.gallery_index) ?? 0,
+				Number(o.gallery_index) || 0,
 			]),
 		},
 		setHWIOScreenshareSelection: {
@@ -473,7 +494,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setHWIOScreenshareSelection', (o) => [
 				Number(o.channel_num) || 1,
-				Number(o.screenshare_index) ?? 0,
+				Number(o.screenshare_index) || 0,
 			]),
 		},
 		setHWIOPinGroupSelection: {
@@ -485,7 +506,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setHWIOPinGroupSelection', (o) => [
 				Number(o.channel_num) || 1,
-				Number(o.pin_group_index) ?? 0,
+				Number(o.pin_group_index) || 0,
 			]),
 		},
 		getHWIOChannelConfig: {
@@ -534,7 +555,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 			],
 			callback: roomCommandWithOpts('setDanteParticipantSelection', (o) => [
 				Number(o.channel_num) || 1,
-				String(o.zoom_username ?? ''),
+				typeof o.zoom_username === 'string' ? o.zoom_username : '',
 			]),
 		},
 		getDanteChannelConfig: {
@@ -552,27 +573,35 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 		setRoomMic: {
 			name: 'Set room mic',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Mic name', id: 'mic_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomMic', (o) => [String(o.mic_name ?? '')]),
+			callback: roomCommandWithOpts('setRoomMic', (o) => [typeof o.mic_name === 'string' ? o.mic_name : '']),
 		},
 		setRoomMainCamera: {
 			name: 'Set main camera',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomMainCamera', (o) => [String(o.camera_name ?? '')]),
+			callback: roomCommandWithOpts('setRoomMainCamera', (o) => [
+				typeof o.camera_name === 'string' ? o.camera_name : '',
+			]),
 		},
 		setRoomMultiCameraOn: {
 			name: 'Set multi-camera on',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomMultiCameraOn', (o) => [String(o.camera_name ?? '')]),
+			callback: roomCommandWithOpts('setRoomMultiCameraOn', (o) => [
+				typeof o.camera_name === 'string' ? o.camera_name : '',
+			]),
 		},
 		setRoomMultiCameraOff: {
 			name: 'Set multi-camera off',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomMultiCameraOff', (o) => [String(o.camera_name ?? '')]),
+			callback: roomCommandWithOpts('setRoomMultiCameraOff', (o) => [
+				typeof o.camera_name === 'string' ? o.camera_name : '',
+			]),
 		},
 		setRoomSpeaker: {
 			name: 'Set room speaker',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Speaker name', id: 'speaker_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomSpeaker', (o) => [String(o.speaker_name ?? '')]),
+			callback: roomCommandWithOpts('setRoomSpeaker', (o) => [
+				typeof o.speaker_name === 'string' ? o.speaker_name : '',
+			]),
 		},
 		getRoomMicList: {
 			name: 'Get room mic list',
@@ -621,8 +650,8 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				{ type: 'textinput', label: 'New display name', id: 'new_camera_display_name', default: '' },
 			],
 			callback: roomCommandWithOpts('setCameraDisplayName', (o) => [
-				String(o.camera_device_name ?? ''),
-				String(o.new_camera_display_name ?? ''),
+				typeof o.camera_device_name === 'string' ? o.camera_device_name : '',
+				typeof o.new_camera_display_name === 'string' ? o.new_camera_display_name : '',
 			]),
 		},
 
@@ -640,7 +669,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 					max: 3,
 				},
 			],
-			callback: roomCommandWithOpts('setNameTagAlignment', (o) => [Number(o.location_index) ?? 2]),
+			callback: roomCommandWithOpts('setNameTagAlignment', (o) => [Number(o.location_index) || 2]),
 		},
 		enableNameTagOverlay: {
 			name: 'Enable name tag overlay',
@@ -697,7 +726,9 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 		startCameraShare: {
 			name: 'Start camera share',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' }],
-			callback: roomCommandWithOpts('startCameraShare', (o) => [String(o.camera_name ?? '')]),
+			callback: roomCommandWithOpts('startCameraShare', (o) => [
+				typeof o.camera_name === 'string' ? o.camera_name : '',
+			]),
 		},
 		stopShare: { name: 'Stop share', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('stopShare') },
 
@@ -719,7 +750,7 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'number', label: 'Preset index', id: 'preset_index', default: 1, min: 1, max: 99 },
 			],
-			callback: roomCommandWithOpts('activateCameraPreset', (o) => [Number(o.preset_index) ?? 1]),
+			callback: roomCommandWithOpts('activateCameraPreset', (o) => [Number(o.preset_index) || 1]),
 		},
 		pairRoom: { name: 'Pair room', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('pairRoom') },
 		unPairRoom: { name: 'Unpair room', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('unPairRoom') },
@@ -731,8 +762,8 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				{ type: 'textinput', label: 'New name', id: 'new_name', default: '' },
 			],
 			callback: roomCommandWithOpts('renameParticipant', (o) => [
-				String(o.current_name ?? ''),
-				String(o.new_name ?? ''),
+				typeof o.current_name === 'string' ? o.current_name : '',
+				typeof o.new_name === 'string' ? o.new_name : '',
 			]),
 		},
 		setActiveSpeakerSelf: {
@@ -746,7 +777,9 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'textinput', label: 'Participant name', id: 'participant_name', default: '' },
 			],
-			callback: roomCommandWithOpts('setActiveSpeakerChild', (o) => [String(o.participant_name ?? '')]),
+			callback: roomCommandWithOpts('setActiveSpeakerChild', (o) => [
+				typeof o.participant_name === 'string' ? o.participant_name : '',
+			]),
 		},
 		getCompanionRoomList: {
 			name: 'Get companion room list',
@@ -759,7 +792,9 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'textinput', label: 'Companion room ID (czr_id)', id: 'czr_id', default: '' },
 			],
-			callback: roomCommandWithOpts('getCompanionRoomCameraList', (o) => [String(o.czr_id ?? '')]),
+			callback: roomCommandWithOpts('getCompanionRoomCameraList', (o) => [
+				typeof o.czr_id === 'string' ? o.czr_id : '',
+			]),
 		},
 		setCompanionRoomCameraDisplayName: {
 			name: 'Set companion room camera display name',
@@ -770,9 +805,9 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				{ type: 'textinput', label: 'New display name', id: 'new_camera_display_name', default: '' },
 			],
 			callback: roomCommandWithOpts('setCompanionRoomCameraDisplayName', (o) => [
-				String(o.czr_id ?? ''),
-				String(o.camera_device_name ?? ''),
-				String(o.new_camera_display_name ?? ''),
+				typeof o.czr_id === 'string' ? o.czr_id : '',
+				typeof o.camera_device_name === 'string' ? o.camera_device_name : '',
+				typeof o.new_camera_display_name === 'string' ? o.new_camera_display_name : '',
 			]),
 		},
 		setCompanionRoomCameraOff: {
@@ -783,8 +818,8 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				{ type: 'textinput', label: 'Camera device name', id: 'camera_device_name', default: '' },
 			],
 			callback: roomCommandWithOpts('setCompanionRoomCameraOff', (o) => [
-				String(o.czr_id ?? ''),
-				String(o.camera_device_name ?? ''),
+				typeof o.czr_id === 'string' ? o.czr_id : '',
+				typeof o.camera_device_name === 'string' ? o.camera_device_name : '',
 			]),
 		},
 		setCompanionRoomCameraOn: {
@@ -795,8 +830,8 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				{ type: 'textinput', label: 'Camera device name', id: 'camera_device_name', default: '' },
 			],
 			callback: roomCommandWithOpts('setCompanionRoomCameraOn', (o) => [
-				String(o.czr_id ?? ''),
-				String(o.camera_device_name ?? ''),
+				typeof o.czr_id === 'string' ? o.czr_id : '',
+				typeof o.camera_device_name === 'string' ? o.camera_device_name : '',
 			]),
 		},
 	}
