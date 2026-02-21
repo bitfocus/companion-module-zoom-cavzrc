@@ -2,6 +2,12 @@ node_modules/
 dist/
 package-lock.json
 pkg/
+scripts/
 *.tgz
 *.log
 .DS_Store
+
+# Icons
+icons/
+*.ico
+*.icns
