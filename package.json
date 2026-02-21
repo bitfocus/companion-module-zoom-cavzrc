@@ -1,11 +1,13 @@
 {
   "name": "companion-module-zoom-rooms",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CAVZRC Companion module — control Zoom Rooms via OSC (alpha)",
   "main": "dist/index.js",
   "scripts": {
-    "package": "yarn build && companion-module-build && node scripts/repack-for-companion.js",
-    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "postinstall": "husky",
+    "format": "prettier -w .",
+    "package": "run build && companion-module-build",
+    "build": "rimraf dist && run build:main",
     "build:main": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
     "lint:raw": "eslint",
@@ -17,7 +19,8 @@
     "url": "git+https://github.com/bitfocus/companion-module-zoom-cavzrc.git"
   },
   "engines": {
-    "node": "^22.14"
+    "node": "^22.14",
+    "yarn": "^4"
   },
   "dependencies": {
     "@companion-module/base": "1.12.1",
@@ -26,7 +29,22 @@
   "devDependencies": {
     "@companion-module/tools": "^2.6.1",
     "@types/node": "^22.15.30",
+    "eslint": "^9.39.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.3"
-  }
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.51.0"
+  },
+  "prettier": "@companion-module/tools/.prettierrc.json",
+  "lint-staged": {
+    "*.{css,json,md,scss}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx,js,jsx}": [
+      "yarn lint:raw --fix"
+    ]
+  },
+  "packageManager": "yarn@4.12.0"
 }
