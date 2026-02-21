@@ -1,6 +1,6 @@
 # CAVZRC Companion module
 
-**Version 0.0.1 (alpha)** — Bitfocus Companion module for **Custom AV for Zoom Rooms Controller (CAVZRC)** using its OSC API. Control Zoom Rooms (join/leave meetings, mute, NDI/HWIO/Dante, device settings, overlays, etc.) from Companion; feedbacks and variables work when CAVZRC sends OSC back to Companion.
+Bitfocus Companion module for **Custom AV for Zoom Rooms Controller (CAVZRC)**. Control Zoom Rooms via OSC from Companion: join/leave meetings, mute, NDI/HWIO/Dante outputs, device settings, overlays, content share, and more. Feedbacks and variables update when CAVZRC sends OSC back to Companion.
 
 **Requirements:** Zoom Rooms 6.5.0+, CAVZRC 1.2.0+. The CAVZRC OSC API is in Beta.
 
@@ -8,121 +8,109 @@
 
 ---
 
-## Recommended: Use the Developer module path (most reliable)
-
-If **Import module package** doesn’t show the module in the list or when adding a connection, use the **Developer module path** instead. Companion will load the module directly from this folder.
-
-1. **Build the module** (in this repo):
-   ```bash
-   yarn build
-   ```
-
-2. **Create a “dev modules” folder** (if you don’t have one), e.g.:
-   - Mac: `~/companion-dev-modules`
-   - Put **this entire project folder** inside it so you have:
-   - `~/companion-dev-modules/companion-module-zoom-rooms/` (with `companion/`, `dist/`, `package.json` inside).
-
-3. **Point Companion at the parent folder** (not the module folder itself):
-   - Open the **Companion launcher** (the small window with the gear).
-   - Click the **gear** → open **Advanced** / **Developer** (or similar).
-   - Turn **Enable Developer Modules** **on**.
-   - Set **Developer module path** (or “Select”) to the **parent** folder, e.g. `~/companion-dev-modules` (the one that *contains* `companion-module-zoom-rooms`).
-
-4. **Apply / OK** and (if needed) restart Companion or click **Launch GUI**.
-
-5. **Add a connection:**
-   - Go to **Connections** → **Add connection**.
-   - In the connection type list, search or browse for **Zoom** → **CAVZRC Companion module** or **CAVZRC**.
-   - Add it and configure Host, tx_port, rx_port, OSC output header.
-
-The module will now appear when adding a connection. You can edit code, run `yarn build` again, and Companion will reload the module when you disable/re-enable the connection (or restart).
-
----
-
-## Alternative: Install via Import module package
-
-1. Build the package: run **`yarn run package`** in this repo. This produces **`zoom-rooms-0.0.1.tgz`** (or the current version).
-2. In Companion, open the **Modules** page (left panel or Settings → Modules).
-3. Click **“Import module package”** and select the **`.tgz`** file.
-4. If Companion says **“module already exists”**, the module is already installed (but if you still don’t see it when adding a connection, use the **Developer path** method above).
-
----
-
-## Building a package for other machines
-
-To test the module on another computer (without cloning the repo or using the developer path):
-
-1. **On your dev machine**, in this repo:
-   ```bash
-   yarn run package
-   ```
-   This builds the module and produces **`zoom-rooms-0.0.1.tgz`** in the project root (version matches `package.json`).
-
-2. **Copy the `.tgz`** to the other machine (USB, cloud, etc.).
-
-3. **On the other machine**, in Companion:
-   - Go to **Modules** → **Import module package** and select the `.tgz` file.
-   - Go to **Connections** → **Add connection** → **Zoom** → **CAVZRC Companion module**.
-   - Configure Host, CAVZRC Receiving Port, and Companion listen port to match that machine's CAVZRC/network.
-
-No repo or dev setup is required on the other machine.
-
----
-
-## Adding a connection (where to find it)
-
-The module does **not** show up as a separate “connection” until you **add** one:
-
-1. Go to **Connections** → **Add connection** (or “+” / “New connection”).
-2. In the **connection type** list, find **Zoom** (manufacturer). Under it select **“Zoom Rooms (CAVZRC)”** or **“Zoom Rooms”**.
-3. Give the connection a name and add it, then configure **Host**, **tx_port**, **rx_port**, and **OSC output header**.
-
-If you don’t see **CAVZRC Companion module** in the list:
-
-- Use the **Developer module path** method above (recommended for this module).
-- Or search in the connection type list for **“Zoom”**, **“Zoom Rooms”**, or **“CAVZRC”**.
-- Restart Companion after setting the Developer path or after importing.
-
----
-
 ## Configuration
 
-- **Host** — IP of the machine running CAVZRC.
-- **tx_port** — CAVZRC “Receiving Port” (where we send OSC).
-- **rx_port** — Port where Companion listens for OSC from CAVZRC (use **0** to disable feedbacks/variables).
-- **OSC output header** — Must match CAVZRC’s “OSC Output Header” (default `/roomosc`).
+Add a connection in Companion: **Connections** → **Add connection** → **Zoom** → **CAVZRC Companion module** (or **CAVZRC**). Then set:
 
-In CAVZRC, set **Transmission IP** and **Transmission Port** to the machine running Companion and the **rx_port** value above.
+| Field | Meaning |
+|-------|--------|
+| **CAVZRC host (IP)** | IP of the machine running CAVZRC (use `127.0.0.1` if Companion and CAVZRC are on the same machine). |
+| **CAVZRC Receiving Port** | Must match CAVZRC’s **Receiving Port** (Companion sends commands here). |
+| **Companion listen port** | Must match CAVZRC’s **Transmission Port** (CAVZRC sends status/feedback here). Use **0** to disable feedback and variables. |
+| **OSC output header** | Must match CAVZRC’s **OSC Output Header** (default `/roomosc`). |
 
-More detail and target types (roomID, roomName, roomIndex, allRooms) are in the in-app help: add a connection, then open the **?** / **Help** for this module (that shows `companion/HELP.md`).
+**In CAVZRC:** Set **Transmission IP** to the machine running Companion (e.g. `127.0.0.1` for same machine), and **Transmission Port** to the same value as **Companion listen port** above. Set **Receiving Port** to the same value as **CAVZRC Receiving Port** above.
 
----
-
-## Development
-
-This module uses **Yarn** (same as other Bitfocus Companion modules).
-
-- **Install dependencies:** `yarn` or `yarn install`
-- **Build:** `yarn build`
-- **Package (for import):** `yarn run package` → produces `zoom-rooms-<version>.tgz`
-- **Dev modules path:** You can also point Companion’s **Developer modules path** at the **parent** of this folder (the folder that contains `companion-module-zoom-rooms`), then run `yarn build` and use the dev module without importing a `.tgz`.
+**Room targeting:** Most actions can target a single room by **Room ID**, **Room name**, or **Room index** (1-based), or **All rooms**.
 
 ---
 
-## Repository
+## What the module can do
 
-This module is part of the Bitfocus Companion project:
+The module exposes CAVZRC’s OSC controls so you can drive Zoom Rooms from Companion buttons, feedbacks, and variables.
 
-- **Official repo:** [github.com/bitfocus/companion-module-zoom-cavzrc](https://github.com/bitfocus/companion-module-zoom-cavzrc)
+### Join / leave
 
-To push updates (if you have write access), set the remote and push:
+- **Join meeting** — Join by meeting ID (and optional password, user name). Target one room or all rooms.
+- **Start meeting** — Start an instant meeting. Target one room or all rooms.
+- **Leave meeting** — Leave the current meeting. Target one room or all rooms.
 
-```bash
-git remote set-url origin https://github.com/bitfocus/companion-module-zoom-cavzrc.git
-git push -u origin main
-```
+### Room list (global)
 
-To contribute without write access: fork the repo on GitHub, push to your fork, then open a Pull Request to `bitfocus/companion-module-zoom-cavzrc`.
+- **Get added room list** — Request the list of added rooms from CAVZRC.
+- **Get paired room list** — Request the list of paired rooms.
+- **Get added room count** / **Get paired room count** — Request counts.
+
+### NDI
+
+- Set NDI channel **content**: Off, Participant, Active Speaker, Gallery, Screenshare, Spotlight, Pin Group.
+- Set **participant**, **gallery**, **screenshare**, or **pin group** selection (with index) for a channel.
+- **Get NDI channel config** / **Get NDI channel count** — Query NDI setup.
+
+### HWIO (hardware I/O)
+
+- Set **mode** (e.g. pass-through, mix).
+- Set **input selection** and **content**: Off, Test Signal, Participant, Active Speaker, Gallery, Screenshare, Spotlight, Pin Group.
+- Set **resolution/frame rate**, **audio mix**, and participant/gallery/screenshare/pin selection per channel.
+- **Get HWIO channel config** / **channel count** / **supported resolution and frame rate**.
+
+### Dante
+
+- Set Dante channel **content**: Off, Participant, Mix, Screenshare; set **participant selection** (with index).
+- **Get Dante channel config** / **channel count**.
+
+### Device (per room)
+
+- **Mic:** Set room mic (by name), get mic list, **mute** / **unmute** mic, get selected mic.
+- **Camera:** Set **main camera**, set **multi-camera on/off** (by name), **start** / **stop** camera, get camera list, get selected primary/multi cameras, **set camera display name**.
+- **Speaker:** Set room speaker (by name), get speaker list, get selected speaker.
+
+### Overlays (per room)
+
+- **Name tag:** Enable/disable name tag overlay; **set name tag alignment** (left/center/right).
+- **Emoji**, **hand raise**, **active speaker** overlays — enable/disable each.
+- **Get overlay settings** — Query current overlay state.
+
+### Content share (per room)
+
+- **Start device share** / **Start camera share** (with optional camera name) / **Stop share**.
+
+### Room / meeting (per room)
+
+- **Get room info**, **participant count**, **meeting status**.
+- **Activate camera preset** (by preset index).
+- **Pair room** / **Unpair room**.
+- **Rename participant** (current name → new name).
+- **Set active speaker** — self or a participant by name.
+
+### Companion rooms (Companion Room feature)
+
+- **Get companion room list** — List Companion rooms.
+- **Get companion room camera list** (by companion room ID).
+- **Set companion room camera display name** / **camera off** / **camera on** (by companion room ID and camera device name).
+
+---
+
+## Feedbacks
+
+- **Room is paired** — True when the chosen room is in the paired list.
+- **In meeting** — True when the chosen room is in a meeting.
+- **Mic unmuted** — True when the room mic is unmuted.
+- **Camera on** — True when the room camera is on.
+
+Room options for feedbacks are filled from the list of paired/added rooms reported by CAVZRC.
+
+---
+
+## Variables
+
+Updated from CAVZRC when the **Companion listen port** is set (non-zero):
+
+- **added_rooms_count**, **paired_rooms_count** — Counts of added and paired rooms.
+- **added_rooms_list**, **paired_rooms_list** — Comma-separated room names.
+- **room_1** … **room_10** — Per-room: **id**, **name**, **meeting_status**, **participant_count**, **mute** (Muted/Unmuted), **camera** (On/Off).
+
+Use these in button labels, stream deck text, or conditional logic.
 
 ---
 
