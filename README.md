@@ -4,6 +4,8 @@
 
 **Requirements:** Zoom Rooms 6.5.0+, CAVZRC 1.2.0+. The CAVZRC OSC API is in Beta.
 
+**Repository:** [github.com/bitfocus/companion-module-zoom-cavzrc](https://github.com/bitfocus/companion-module-zoom-cavzrc)
+
 ---
 
 ## Recommended: Use the Developer module path (most reliable)
@@ -12,7 +14,7 @@ If **Import module package** doesn’t show the module in the list or when addin
 
 1. **Build the module** (in this repo):
    ```bash
-   npm run build
+   yarn build
    ```
 
 2. **Create a “dev modules” folder** (if you don’t have one), e.g.:
@@ -33,13 +35,13 @@ If **Import module package** doesn’t show the module in the list or when addin
    - In the connection type list, search or browse for **Zoom** → **CAVZRC Companion module** or **CAVZRC**.
    - Add it and configure Host, tx_port, rx_port, OSC output header.
 
-The module will now appear when adding a connection. You can edit code, run `npm run build` again, and Companion will reload the module when you disable/re-enable the connection (or restart).
+The module will now appear when adding a connection. You can edit code, run `yarn build` again, and Companion will reload the module when you disable/re-enable the connection (or restart).
 
 ---
 
 ## Alternative: Install via Import module package
 
-1. Build the package: run **`npm run package`** in this repo. This produces **`zoom-rooms-0.0.1.tgz`** (or the current version).
+1. Build the package: run **`yarn run package`** in this repo. This produces **`zoom-rooms-0.0.1.tgz`** (or the current version).
 2. In Companion, open the **Modules** page (left panel or Settings → Modules).
 3. Click **“Import module package”** and select the **`.tgz`** file.
 4. If Companion says **“module already exists”**, the module is already installed (but if you still don’t see it when adding a connection, use the **Developer path** method above).
@@ -52,7 +54,7 @@ To test the module on another computer (without cloning the repo or using the de
 
 1. **On your dev machine**, in this repo:
    ```bash
-   npm run package
+   yarn run package
    ```
    This builds the module and produces **`zoom-rooms-0.0.1.tgz`** in the project root (version matches `package.json`).
 
@@ -98,27 +100,29 @@ More detail and target types (roomID, roomName, roomIndex, allRooms) are in the 
 
 ## Development
 
-- **Build:** `npm run build`
-- **Package (for import):** `npm run package` → produces `zoom-rooms-<version>.tgz`
-- **Dev modules path:** You can also point Companion’s **Developer modules path** at the **parent** of this folder (the folder that contains `companion-module-zoom-rooms`), then run `npm run build` and use the dev module without importing a `.tgz`.
+This module uses **Yarn** (same as other Bitfocus Companion modules).
+
+- **Install dependencies:** `yarn` or `yarn install`
+- **Build:** `yarn build`
+- **Package (for import):** `yarn run package` → produces `zoom-rooms-<version>.tgz`
+- **Dev modules path:** You can also point Companion’s **Developer modules path** at the **parent** of this folder (the folder that contains `companion-module-zoom-rooms`), then run `yarn build` and use the dev module without importing a `.tgz`.
 
 ---
 
-## Publishing to GitHub
+## Repository
 
-1. Create a new repository on GitHub (e.g. `companion-module-cavzrc`).
-2. In this folder, init and push (replace `YOUR_USERNAME` and `companion-module-cavzrc` with your repo):
+This module is part of the Bitfocus Companion project:
 
-   ```bash
-   git init
-   git add .
-   git commit -m "CAVZRC Companion module v0.0.1 alpha"
-   git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/companion-module-cavzrc.git
-   git push -u origin main
-   ```
+- **Official repo:** [github.com/bitfocus/companion-module-zoom-cavzrc](https://github.com/bitfocus/companion-module-zoom-cavzrc)
 
-3. In `package.json` and `companion/manifest.json`, set the `repository` and `bugs` URLs to your repo if you use a different username or repo name.
+To push updates (if you have write access), set the remote and push:
+
+```bash
+git remote set-url origin https://github.com/bitfocus/companion-module-zoom-cavzrc.git
+git push -u origin main
+```
+
+To contribute without write access: fork the repo on GitHub, push to your fork, then open a Pull Request to `bitfocus/companion-module-zoom-cavzrc`.
 
 ---
 

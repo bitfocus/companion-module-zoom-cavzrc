@@ -4,7 +4,7 @@
   "description": "CAVZRC Companion module — control Zoom Rooms via OSC (alpha)",
   "main": "dist/index.js",
   "scripts": {
-    "package": "npm run build && companion-module-build && node scripts/repack-for-companion.js",
+    "package": "yarn build && companion-module-build && node scripts/repack-for-companion.js",
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "build:main": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
@@ -14,7 +14,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bitfocus/companion-module-cavzrc.git"
+    "url": "git+https://github.com/bitfocus/companion-module-zoom-cavzrc.git"
   },
   "engines": {
     "node": "^22.14"
