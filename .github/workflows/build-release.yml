@@ -1,0 +1,40 @@
+# Build the Companion module package and attach it to GitHub Releases.
+# When you create a Release (e.g. tag v0.0.2), this runs and uploads zoom-rooms-<version>.tgz.
+
+name: Build and attach package to Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Enable Corepack (Yarn)
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build package
+        run: yarn run package
+
+      - name: Find package version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Upload package to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: zoom-rooms-${{ steps.version.outputs.version }}.tgz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
