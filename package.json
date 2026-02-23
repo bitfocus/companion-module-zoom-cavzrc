@@ -1,6 +1,6 @@
 {
   "name": "companion-module-zoom-rooms",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "CAVZRC Companion module — control Zoom Rooms via OSC (alpha)",
   "main": "dist/index.js",
   "scripts": {
