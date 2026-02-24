@@ -1,16 +1,21 @@
 {
-	"id": "zoom-rooms",
-	"name": "CAVZRC Companion module",
-	"shortname": "CAVZRC",
-	"description": "Control Zoom Rooms via CAVZRC OSC for Bitfocus Companion (alpha)",
-	"version": "0.0.2",
-	"license": "MIT",
-	"repository": "https://github.com/bitfocus/companion-module-zoom-cavzrc",
-	"bugs": "https://github.com/bitfocus/companion-module-zoom-cavzrc/issues",
-	"maintainers": [{ "name": "Community" }],
-	"legacyIds": [],
-	"runtime": { "type": "node22", "api": "nodejs-ipc", "apiVersion": "1.12.1", "entrypoint": "../dist/index.js" },
-	"manufacturer": "Zoom",
-	"products": ["Custom AV for Zoom Rooms Controller"],
-	"keywords": ["zoom", "Zoom Rooms", "CAVZRC", "OSC"]
+  "id": "companion-module-zoom-cavzrc",
+  "name": "Zoom Rooms (CAVZRC)",
+  "shortname": "Zoom Rooms",
+  "description": "Custom AV for Zoom Rooms Controller (CAVZRC) OSC plugin for Companion",
+  "version": "0.0.0",
+  "license": "MIT",
+  "repository": "git+https://github.com/bitfocus/companion-module-zoom-cavzrc.git",
+  "bugs": "https://github.com/bitfocus/companion-module-zoom-cavzrc/issues",
+  "maintainers": [{"name": "Community"}],
+  "legacyIds": [],
+  "runtime": {
+    "type": "node22",
+    "api": "nodejs-ipc",
+    "apiVersion": "0.0.0",
+    "entrypoint": "dist/index.js"
+  },
+  "manufacturer": "Zoom",
+  "products": ["Custom AV for Zoom Rooms Controller"],
+  "keywords": ["zoom", "Zoom Rooms", "CAVZRC", "OSC"]
 }
