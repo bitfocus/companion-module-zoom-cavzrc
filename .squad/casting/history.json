@@ -1,0 +1,10 @@
+{
+	"assignments": [
+		{
+			"assignment_id": "cavzrc-matrix-001",
+			"universe": "The Matrix",
+			"timestamp": "2026-02-22T01:00:00Z",
+			"agents": ["Morpheus", "Trinity", "Tank", "Neo", "Switch", "Scribe"]
+		}
+	]
+}

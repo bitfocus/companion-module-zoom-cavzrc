@@ -1,0 +1,8 @@
+{
+	"casting_policy_version": "1.1",
+	"selected_universe": "The Matrix",
+	"allowlist_universes": ["The Matrix"],
+	"universe_capacity": {
+		"The Matrix": 10
+	}
+}
