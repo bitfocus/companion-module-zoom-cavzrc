@@ -1,10 +1,6 @@
 import { GetActions } from '../src/actions.js'
+import { invoke } from './helpers/invoke.js'
 import { createMockInstance } from './helpers/mock-instance.js'
-
-function invoke(action: ReturnType<typeof GetActions>[string], options: Record<string, unknown>): void {
-	const cb = (action as unknown as { callback: (a: { options: Record<string, unknown> }) => void }).callback
-	cb({ options })
-}
 
 describe('GetActions', () => {
 	let actions: ReturnType<typeof GetActions>
