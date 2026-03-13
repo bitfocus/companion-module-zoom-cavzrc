@@ -1,4 +1,4 @@
-import type { InstanceBase } from '@companion-module/base'
+import { InstanceStatus, type InstanceBase } from '@companion-module/base'
 import type { ZoomRoomsConfig } from './config.js'
 import type { CavzrcState } from './utils.js'
 const osc = require('osc') // eslint-disable-line
@@ -63,6 +63,7 @@ export class OSC {
 		const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
 		this.udpSocket = socket
 		socket.on('error', (err: Error & { code?: string }) => {
+			this.instance.updateStatus(InstanceStatus.UnknownError, `OSC socket error: ${err.message}`)
 			if (err.code === 'EADDRINUSE') {
 				this.instance.log(
 					'error',
@@ -84,6 +85,7 @@ export class OSC {
 		})
 		socket.bind({ port: this.rxPort, address: '0.0.0.0' }, () => {
 			this.instance.log('info', `Listening for CAVZRC OSC on port ${this.rxPort}`)
+			this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${this.rxPort}`)
 		})
 	}
 
