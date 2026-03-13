@@ -10,7 +10,7 @@ const config = {
 	moduleNameMapper: {
 		'^(\\.{1,2}/.*)\\.js$': '$1',
 	},
-	setupFiles: ['./tests/setup.ts'],
+	setupFilesAfterEnv: ['./tests/setup.ts'],
 }
 
 module.exports = config
