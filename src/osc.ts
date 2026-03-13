@@ -10,7 +10,11 @@ export class OSC {
 
 	constructor(instance: ZoomRoomsInstance) {
 		this.instance = instance
-		this.sendSocket = dgram.createSocket({ type: 'udp4' })
+		const sendSocket = dgram.createSocket({ type: 'udp4' })
+		sendSocket.on('error', (err: Error) => {
+			this.instance.log('error', `OSC send socket error: ${err.message}`)
+		})
+		this.sendSocket = sendSocket
 		this.connect()
 	}
 
