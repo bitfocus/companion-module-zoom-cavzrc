@@ -1,5 +1,5 @@
 import type { CompanionPresetDefinitions, CompanionOptionValues } from '@companion-module/base'
-import type { ZoomRoomsInstance } from './osc.js'
+import type { ZoomRoomsInstance } from './types.js'
 
 export function GetPresetList(_instance: ZoomRoomsInstance): CompanionPresetDefinitions {
 	const presets: CompanionPresetDefinitions = {}

@@ -1,5 +1,5 @@
 import type { CompanionFeedbackDefinitions } from '@companion-module/base'
-import type { ZoomRoomsInstance } from './osc.js'
+import type { ZoomRoomsInstance } from './types.js'
 
 function roomChoices(instance: ZoomRoomsInstance): { id: string; label: string }[] {
 	const choices = [{ id: '', label: '(Select room)' }]

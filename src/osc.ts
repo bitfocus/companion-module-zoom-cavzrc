@@ -1,14 +1,7 @@
-import { InstanceStatus, type InstanceBase } from '@companion-module/base'
-import type { ZoomRoomsConfig } from './config.js'
-import type { CavzrcState } from './utils.js'
+import { InstanceStatus } from '@companion-module/base'
 const osc = require('osc') // eslint-disable-line
 const dgram = require('dgram') // eslint-disable-line
-export interface ZoomRoomsInstance extends InstanceBase<ZoomRoomsConfig> {
-	config: ZoomRoomsConfig
-	state: CavzrcState
-	OSC: OSC | null
-	updateVariableValues: () => void
-}
+import type { ZoomRoomsInstance } from './types.js'
 
 export class OSC {
 	private readonly instance: ZoomRoomsInstance

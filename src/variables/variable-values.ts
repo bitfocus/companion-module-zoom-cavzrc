@@ -1,4 +1,4 @@
-import type { ZoomRoomsInstance } from '../osc.js'
+import type { ZoomRoomsInstance } from '../types.js'
 
 export function updateVariableValues(instance: ZoomRoomsInstance): void {
 	const state = instance.state
