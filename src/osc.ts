@@ -1,20 +1,14 @@
 import { InstanceStatus } from '@companion-module/base'
-const osc = require('osc') // eslint-disable-line
-const dgram = require('dgram') // eslint-disable-line
+import { UDPPort } from 'osc'
+import type { OscArgument } from 'osc'
 import type { ZoomRoomsInstance } from './types.js'
 
 export class OSC {
 	private readonly instance: ZoomRoomsInstance
-	private udpSocket: import('dgram').Socket | null = null
-	private sendSocket: import('dgram').Socket | null = null
+	private udpPort: UDPPort | null = null
 
 	constructor(instance: ZoomRoomsInstance) {
 		this.instance = instance
-		const sendSocket = dgram.createSocket({ type: 'udp4' })
-		sendSocket.on('error', (err: Error) => {
-			this.instance.log('error', `OSC send socket error: ${err.message}`)
-		})
-		this.sendSocket = sendSocket
 		this.connect()
 	}
 
@@ -37,56 +31,55 @@ export class OSC {
 
 	public sendCommand(path: string, args: (string | number | boolean)[] = []): void {
 		const oscArgs = args.map((a) => (typeof a === 'boolean' ? (a ? 1 : 0) : a))
-		const msg = { address: path.startsWith('/') ? path : `/${path}`, args: oscArgs }
-		let buf: Buffer
+		if (!this.udpPort) return
 		try {
-			buf = Buffer.from(osc.writeMessage(msg))
+			this.udpPort.send({ address: path.startsWith('/') ? path : `/${path}`, args: oscArgs })
 		} catch (e) {
-			this.instance.log('error', `OSC encode error: ${String(e)}`)
-			return
+			this.instance.log('error', `OSC send error: ${String(e)}`)
 		}
-		if (!this.sendSocket) return
-		this.sendSocket.send(buf, 0, buf.length, this.txPort, this.host, (err) => {
-			if (err) this.instance.log('error', `OSC send error: ${err.message}`)
-		})
 	}
 
 	private connect(): void {
-		if (this.rxPort <= 0) {
+		const rxPort = this.rxPort
+		if (rxPort <= 0) {
 			this.instance.log('info', 'rx_port is 0; not listening for OSC outputs')
-			return
 		}
 
-		const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
-		this.udpSocket = socket
-		socket.on('error', (err: Error & { code?: string }) => {
+		const port = new UDPPort({
+			localAddress: '0.0.0.0',
+			localPort: rxPort > 0 ? rxPort : 0,
+			remoteAddress: this.host,
+			remotePort: this.txPort,
+			metadata: true,
+		})
+		this.udpPort = port
+
+		port.on('error', (err: Error) => {
 			this.instance.updateStatus(InstanceStatus.UnknownError, `OSC socket error: ${err.message}`)
-			if (err.code === 'EADDRINUSE') {
+			if ((err as Error & { code?: string }).code === 'EADDRINUSE') {
 				this.instance.log(
 					'error',
-					`Port ${this.rxPort} is already in use. Choose a different "Companion listen port" in this connection's config, or close the other app using that port.`,
+					`Port ${rxPort} is already in use. Choose a different "Companion listen port" in this connection's config, or close the other app using that port.`,
 				)
 			} else {
 				this.instance.log('error', `OSC socket error: ${err.message}`)
 			}
 		})
-		socket.on('message', (msg: Buffer) => {
-			try {
-				const packet = osc.readPacket(msg, { metadata: true })
-				if (packet && packet.address) {
-					this.handleMessage(packet.address, packet.args || [])
-				}
-			} catch (e) {
-				this.instance.log('debug', `OSC parse error: ${String(e)}`)
-			}
-		})
-		socket.bind({ port: this.rxPort, address: '0.0.0.0' }, () => {
-			this.instance.log('info', `Listening for CAVZRC OSC on port ${this.rxPort}`)
-			this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${this.rxPort}`)
-		})
+
+		if (rxPort > 0) {
+			port.on('message', (msg) => {
+				this.handleMessage(msg.address, msg.args)
+			})
+			port.on('ready', () => {
+				this.instance.log('info', `Listening for CAVZRC OSC on port ${rxPort}`)
+				this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${rxPort}`)
+			})
+		}
+
+		port.open()
 	}
 
-	private handleMessage(address: string, args: { type: string; value: unknown }[]): void {
+	private handleMessage(address: string, args: OscArgument[]): void {
 		const header = this.outputHeader
 		if (!address.startsWith(header)) {
 			return
@@ -193,7 +186,7 @@ export class OSC {
 		}
 	}
 
-	private argStr(args: { type: string; value: unknown }[], i: number): string | undefined {
+	private argStr(args: OscArgument[], i: number): string | undefined {
 		const a = args[i]
 		if (!a) return undefined
 		if (typeof a.value === 'string') return a.value
@@ -201,7 +194,7 @@ export class OSC {
 		return undefined
 	}
 
-	private argInt(args: { type: string; value: unknown }[], i: number): number | undefined {
+	private argInt(args: OscArgument[], i: number): number | undefined {
 		const a = args[i]
 		if (!a) return undefined
 		if (typeof a.value === 'number') return a.value
@@ -210,13 +203,9 @@ export class OSC {
 	}
 
 	public destroy(): void {
-		if (this.udpSocket) {
-			this.udpSocket.close()
-			this.udpSocket = null
-		}
-		if (this.sendSocket) {
-			this.sendSocket.close()
-			this.sendSocket = null
+		if (this.udpPort) {
+			this.udpPort.close()
+			this.udpPort = null
 		}
 	}
 }
