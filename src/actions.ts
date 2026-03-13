@@ -97,166 +97,26 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 		joinMeeting: {
 			name: 'Join meeting',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Target type',
-					id: 'targetType',
-					default: 'roomIndex',
-					choices: [
-						{ id: 'roomID', label: 'Room ID' },
-						{ id: 'roomName', label: 'Room name' },
-						{ id: 'roomIndex', label: 'Room index' },
-						{ id: 'allRooms', label: 'All rooms' },
-					],
-				},
-				{ type: 'textinput', label: 'Room ID', id: 'roomID', default: '', isVisible: (o) => o.targetType === 'roomID' },
-				{
-					type: 'textinput',
-					label: 'Room name',
-					id: 'roomName',
-					default: '',
-					isVisible: (o) => o.targetType === 'roomName',
-				},
-				{
-					type: 'number',
-					label: 'Room index (1-based)',
-					id: 'roomIndex',
-					default: 1,
-					min: 1,
-					max: 999,
-					isVisible: (o) => o.targetType === 'roomIndex',
-				},
+				...ROOM_TARGET_OPTIONS,
 				{ type: 'textinput', label: 'Meeting ID', id: 'meetingID', default: '' },
 				{ type: 'textinput', label: 'Meeting password', id: 'meetingPass', default: '' },
 				{ type: 'textinput', label: 'User name', id: 'userName', default: '' },
 			],
-			callback: (action) => {
-				const opt = action.options
-				const targetType = (opt.targetType as TargetType) || 'roomIndex'
-				const roomArg: string | number | undefined =
-					targetType === 'roomID'
-						? typeof opt.roomID === 'string'
-							? opt.roomID
-							: ''
-						: targetType === 'roomName'
-							? typeof opt.roomName === 'string'
-								? opt.roomName
-								: ''
-							: targetType === 'roomIndex'
-								? Number(opt.roomIndex) || 1
-								: undefined
-				const { path, args } = buildRoomPath(targetType, 'joinMeeting', roomArg)
-				send(path, [
-					...args,
-					typeof opt.meetingID === 'string' ? opt.meetingID : '',
-					typeof opt.meetingPass === 'string' ? opt.meetingPass : '',
-					typeof opt.userName === 'string' ? opt.userName : '',
-				])
-			},
+			callback: roomCommandWithOpts('joinMeeting', (o) => [
+				typeof o.meetingID === 'string' ? o.meetingID : '',
+				typeof o.meetingPass === 'string' ? o.meetingPass : '',
+				typeof o.userName === 'string' ? o.userName : '',
+			]),
 		},
 		startMeeting: {
 			name: 'Start meeting',
-			options: [
-				{
-					type: 'dropdown',
-					label: 'Target type',
-					id: 'targetType',
-					default: 'roomIndex',
-					choices: [
-						{ id: 'roomID', label: 'Room ID' },
-						{ id: 'roomName', label: 'Room name' },
-						{ id: 'roomIndex', label: 'Room index' },
-						{ id: 'allRooms', label: 'All rooms' },
-					],
-				},
-				{ type: 'textinput', label: 'Room ID', id: 'roomID', default: '', isVisible: (o) => o.targetType === 'roomID' },
-				{
-					type: 'textinput',
-					label: 'Room name',
-					id: 'roomName',
-					default: '',
-					isVisible: (o) => o.targetType === 'roomName',
-				},
-				{
-					type: 'number',
-					label: 'Room index (1-based)',
-					id: 'roomIndex',
-					default: 1,
-					min: 1,
-					max: 999,
-					isVisible: (o) => o.targetType === 'roomIndex',
-				},
-			],
-			callback: (action) => {
-				const opt = action.options
-				const targetType = (opt.targetType as TargetType) || 'roomIndex'
-				const roomArg: string | number | undefined =
-					targetType === 'roomID'
-						? typeof opt.roomID === 'string'
-							? opt.roomID
-							: ''
-						: targetType === 'roomName'
-							? typeof opt.roomName === 'string'
-								? opt.roomName
-								: ''
-							: targetType === 'roomIndex'
-								? Number(opt.roomIndex) || 1
-								: undefined
-				const { path, args } = buildRoomPath(targetType, 'startMeeting', roomArg)
-				send(path, args)
-			},
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand('startMeeting'),
 		},
 		leaveMeeting: {
 			name: 'Leave meeting',
-			options: [
-				{
-					type: 'dropdown',
-					label: 'Target type',
-					id: 'targetType',
-					default: 'roomIndex',
-					choices: [
-						{ id: 'roomID', label: 'Room ID' },
-						{ id: 'roomName', label: 'Room name' },
-						{ id: 'roomIndex', label: 'Room index' },
-						{ id: 'allRooms', label: 'All rooms' },
-					],
-				},
-				{ type: 'textinput', label: 'Room ID', id: 'roomID', default: '', isVisible: (o) => o.targetType === 'roomID' },
-				{
-					type: 'textinput',
-					label: 'Room name',
-					id: 'roomName',
-					default: '',
-					isVisible: (o) => o.targetType === 'roomName',
-				},
-				{
-					type: 'number',
-					label: 'Room index (1-based)',
-					id: 'roomIndex',
-					default: 1,
-					min: 1,
-					max: 999,
-					isVisible: (o) => o.targetType === 'roomIndex',
-				},
-			],
-			callback: (action) => {
-				const opt = action.options
-				const targetType = (opt.targetType as TargetType) || 'roomIndex'
-				const roomArg: string | number | undefined =
-					targetType === 'roomID'
-						? typeof opt.roomID === 'string'
-							? opt.roomID
-							: ''
-						: targetType === 'roomName'
-							? typeof opt.roomName === 'string'
-								? opt.roomName
-								: ''
-							: targetType === 'roomIndex'
-								? Number(opt.roomIndex) || 1
-								: undefined
-				const { path, args } = buildRoomPath(targetType, 'leaveMeeting', roomArg)
-				send(path, args)
-			},
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand('leaveMeeting'),
 		},
 		// ---- Global ----
 		getAddedRoomList: {
