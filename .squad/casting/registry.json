@@ -1,52 +1,59 @@
 {
-	"agents": {
-		"morpheus": {
-			"persistent_name": "Morpheus",
-			"universe": "The Matrix",
+	"version": "1.0",
+	"assignments": [
+		{
+			"persistent_name": "Mal",
+			"universe": "Firefly",
 			"role": "Lead",
-			"created_at": "2026-02-22T01:00:00Z",
+			"agent_folder": "mal",
 			"legacy_named": false,
-			"status": "active"
+			"status": "active",
+			"created_at": "2026-03-13T01:43:06Z"
 		},
-		"trinity": {
-			"persistent_name": "Trinity",
-			"universe": "The Matrix",
+		{
+			"persistent_name": "Wash",
+			"universe": "Firefly",
 			"role": "Backend Dev",
-			"created_at": "2026-02-22T01:00:00Z",
+			"agent_folder": "wash",
 			"legacy_named": false,
-			"status": "active"
+			"status": "active",
+			"created_at": "2026-03-13T01:43:06Z"
 		},
-		"tank": {
-			"persistent_name": "Tank",
-			"universe": "The Matrix",
-			"role": "Analyst",
-			"created_at": "2026-02-22T01:00:00Z",
+		{
+			"persistent_name": "Kaylee",
+			"universe": "Firefly",
+			"role": "Module Dev",
+			"agent_folder": "kaylee",
 			"legacy_named": false,
-			"status": "active"
+			"status": "active",
+			"created_at": "2026-03-13T01:43:06Z"
 		},
-		"neo": {
-			"persistent_name": "Neo",
-			"universe": "The Matrix",
+		{
+			"persistent_name": "Zoe",
+			"universe": "Firefly",
 			"role": "Tester",
-			"created_at": "2026-02-22T01:00:00Z",
+			"agent_folder": "zoe",
 			"legacy_named": false,
-			"status": "active"
+			"status": "active",
+			"created_at": "2026-03-13T01:43:06Z"
 		},
-		"switch": {
-			"persistent_name": "Switch",
-			"universe": "The Matrix",
-			"role": "DevOps",
-			"created_at": "2026-02-22T01:00:00Z",
-			"legacy_named": false,
-			"status": "active"
-		},
-		"scribe": {
+		{
 			"persistent_name": "Scribe",
-			"universe": "exempt",
+			"universe": null,
 			"role": "Session Logger",
-			"created_at": "2026-02-22T01:00:00Z",
+			"agent_folder": "scribe",
 			"legacy_named": false,
-			"status": "active"
+			"status": "active",
+			"created_at": "2026-03-13T01:43:06Z"
+		},
+		{
+			"persistent_name": "Ralph",
+			"universe": null,
+			"role": "Work Monitor",
+			"agent_folder": "ralph",
+			"legacy_named": false,
+			"status": "active",
+			"created_at": "2026-03-13T01:43:06Z"
 		}
-	}
+	]
 }

@@ -1,27 +1,16 @@
-# Scribe — History
-
-## Project Context
+# Project Context
 
 - **Project:** companion-module-zoom-cavzrc
-- **Description:** Bitfocus Companion module for Zoom Custom AV / Zoom Rooms Controller (CAVZRC)
-- **Stack:** TypeScript, Node.js 22, yarn 4, @companion-module/base 1.12.1
-- **Protocol:** OSC (using `osc` npm package)
+- **Created:** 2026-03-13
 
-## Team Context
+## Core Context
 
-- **Owner:** Justin James (alias: "Owner") — ultimate decision authority
-- **Requested by:** Justin James
-- **Universe:** The Matrix (Scribe is universe-exempt)
-- **Status:** Team setup complete
+Agent Scribe initialized and ready for work.
 
-## Files I Maintain
+## Recent Updates
 
-- `.squad/decisions.md` — Authoritative decision log
-- `.squad/decisions/inbox/` — Incoming decisions to merge
-- `.squad/logs/sessions/` — Session summaries
-- `.squad/logs/orchestration/` — Multi-agent workflow logs
-- `.squad/identity/now.md` — Current team focus
+📌 Team initialized on 2026-03-13
 
-## Current Focus
+## Learnings
 
-Team initialized. Awaiting first decisions and session events to record.
+Initial setup complete.
