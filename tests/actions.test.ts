@@ -1,15 +1,5 @@
 import { GetActions } from '../src/actions.js'
-
-const mockSendCommand = jest.fn()
-
-const mockInstance = {
-	OSC: { sendCommand: mockSendCommand },
-	config: { host: '127.0.0.1', tx_port: 9090, rx_port: 0, oscOutputHeader: '/roomosc' },
-	state: { addedRooms: [], pairedRooms: [], addedRoomsCount: 0, pairedRoomsCount: 0, rooms: {} },
-	log: jest.fn(),
-	updateStatus: jest.fn(),
-	updateVariableValues: jest.fn(),
-}
+import { createMockInstance } from './helpers/mock-instance.js'
 
 function invoke(action: ReturnType<typeof GetActions>[string], options: Record<string, unknown>): void {
 	const cb = (action as unknown as { callback: (a: { options: Record<string, unknown> }) => void }).callback
@@ -18,10 +8,12 @@ function invoke(action: ReturnType<typeof GetActions>[string], options: Record<s
 
 describe('GetActions', () => {
 	let actions: ReturnType<typeof GetActions>
+	let mockSendCommand: jest.Mock
 
 	beforeEach(() => {
-		mockSendCommand.mockClear()
-		actions = GetActions(mockInstance as any)
+		const mock = createMockInstance()
+		mockSendCommand = mock.mockSendCommand
+		actions = GetActions(mock.instance)
 	})
 
 	describe('room target routing', () => {
