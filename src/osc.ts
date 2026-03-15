@@ -6,6 +6,7 @@ import type { ZoomRoomsInstance } from './types.js'
 export class OSC {
 	private readonly instance: ZoomRoomsInstance
 	private udpPort: UDPPort | null = null
+	private pollInterval: ReturnType<typeof setInterval> | null = null
 
 	constructor(instance: ZoomRoomsInstance) {
 		this.instance = instance
@@ -30,6 +31,7 @@ export class OSC {
 	}
 
 	public sendCommand(path: string, args: (string | number | boolean)[] = []): void {
+		this.instance.log('debug', `Sending OSC command: ${path} ${JSON.stringify(args)}`)
 		if (!this.udpPort) return
 		const oscArgs = args.map((a) => {
 			if (typeof a === 'boolean') return { type: 'i', value: a ? 1 : 0 }
@@ -78,12 +80,22 @@ export class OSC {
 				this.instance.log('info', `Listening for CAVZRC OSC on port ${rxPort}`)
 				this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${rxPort}`)
 			})
+		} else {
+			this.instance.updateStatus(InstanceStatus.Ok, `Not listening for CAVZRC OSC (rx_port is 0)`)
 		}
 
 		port.open()
+
+		this.pollInterval = setInterval(() => {
+			this.sendCommand('/zoomRooms/getAddedRoomList', [])
+			this.sendCommand('/zoomRooms/getPairedRoomList', [])
+			this.sendCommand('/zoomRooms/getAddedRoomCount', [])
+			this.sendCommand('/zoomRooms/getPairedRoomCount', [])
+		}, 1000)
 	}
 
 	private handleMessage(address: string, args: OscArgument[]): void {
+		this.instance.log('debug', `OSC message received: ${address} ${JSON.stringify(args)}`)
 		const header = this.outputHeader
 		if (!address.startsWith(header)) {
 			return
@@ -121,9 +133,9 @@ export class OSC {
 				state.addedRooms[thisIndex] = { roomID, roomName, roomIndex: thisIndex + 1 }
 				if (thisIndex === (maxList ?? 1) - 1) {
 					state.addedRooms = state.addedRooms.slice(0, maxList ?? thisIndex + 1)
-					this.instance.updateVariableValues()
-					this.instance.checkFeedbacks()
 				}
+				this.instance.updateVariableValues()
+				this.instance.checkFeedbacks()
 			}
 			return
 		}
@@ -139,9 +151,9 @@ export class OSC {
 				state.pairedRooms[thisIndex] = { roomID, roomName, roomIndex: thisIndex + 1 }
 				if (thisIndex === (maxList ?? 1) - 1) {
 					state.pairedRooms = state.pairedRooms.slice(0, maxList ?? thisIndex + 1)
-					this.instance.updateVariableValues()
-					this.instance.checkFeedbacks()
 				}
+				this.instance.updateVariableValues()
+				this.instance.checkFeedbacks()
 			}
 			return
 		}
@@ -207,6 +219,10 @@ export class OSC {
 	}
 
 	public destroy(): void {
+		if (this.pollInterval !== null) {
+			clearInterval(this.pollInterval)
+			this.pollInterval = null
+		}
 		if (this.udpPort) {
 			this.udpPort.close()
 			this.udpPort = null

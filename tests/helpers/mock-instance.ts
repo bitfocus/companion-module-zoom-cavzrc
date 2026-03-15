@@ -9,6 +9,7 @@ export function createMockInstance(): { instance: ZoomRoomsInstance; mockSendCom
 		log: jest.fn(),
 		updateStatus: jest.fn(),
 		updateVariableValues: jest.fn(),
+		checkFeedbacks: jest.fn(),
 	} as unknown as ZoomRoomsInstance
 
 	return { instance, mockSendCommand }
