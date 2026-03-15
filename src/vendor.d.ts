@@ -26,7 +26,7 @@ declare module 'osc' {
 		on(event: string, listener: (...args: unknown[]) => void): this
 		open(): void
 		close(): void
-		send(message: { address: string; args: (string | number)[] }): void
+		send(message: { address: string; args: OscArgument[] }): void
 	}
 
 	function writeMessage(message: { address: string; args: unknown[] }): ArrayBuffer

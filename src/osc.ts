@@ -30,8 +30,12 @@ export class OSC {
 	}
 
 	public sendCommand(path: string, args: (string | number | boolean)[] = []): void {
-		const oscArgs = args.map((a) => (typeof a === 'boolean' ? (a ? 1 : 0) : a))
 		if (!this.udpPort) return
+		const oscArgs = args.map((a) => {
+			if (typeof a === 'boolean') return { type: 'i', value: a ? 1 : 0 }
+			if (typeof a === 'number') return Number.isInteger(a) ? { type: 'i', value: a } : { type: 'f', value: a }
+			return { type: 's', value: String(a) }
+		})
 		try {
 			this.udpPort.send({ address: path.startsWith('/') ? path : `/${path}`, args: oscArgs })
 		} catch (e) {
