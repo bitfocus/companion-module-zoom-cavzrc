@@ -2,6 +2,16 @@ import type { ZoomRoomsInstance } from '../types.js'
 
 export function updateVariableValues(instance: ZoomRoomsInstance): void {
 	const state = instance.state
+	instance.log(
+		'debug',
+		`[updateVariableValues] addedRooms=${state.addedRooms.length} pairedRooms=${state.pairedRooms.length} added_rooms_list="${
+			state.addedRooms
+				.map((r) => r.roomName)
+				.filter(Boolean)
+				.join(', ') || '—'
+		}"`,
+	)
+
 	const values: Record<string, string | number> = {
 		added_rooms_count: state.addedRoomsCount,
 		paired_rooms_count: state.pairedRoomsCount,

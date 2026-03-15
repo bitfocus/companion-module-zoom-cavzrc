@@ -79,19 +79,18 @@ export class OSC {
 			port.on('ready', () => {
 				this.instance.log('info', `Listening for CAVZRC OSC on port ${rxPort}`)
 				this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${rxPort}`)
+				this.pollInterval = setInterval(() => {
+					this.sendCommand('/zoomRooms/getAddedRoomList', [])
+					this.sendCommand('/zoomRooms/getPairedRoomList', [])
+					this.sendCommand('/zoomRooms/getAddedRoomCount', [])
+					this.sendCommand('/zoomRooms/getPairedRoomCount', [])
+				}, 1000)
 			})
 		} else {
 			this.instance.updateStatus(InstanceStatus.Ok, `Not listening for CAVZRC OSC (rx_port is 0)`)
 		}
 
 		port.open()
-
-		this.pollInterval = setInterval(() => {
-			this.sendCommand('/zoomRooms/getAddedRoomList', [])
-			this.sendCommand('/zoomRooms/getPairedRoomList', [])
-			this.sendCommand('/zoomRooms/getAddedRoomCount', [])
-			this.sendCommand('/zoomRooms/getPairedRoomCount', [])
-		}, 1000)
 	}
 
 	private handleMessage(address: string, args: OscArgument[]): void {
@@ -122,10 +121,15 @@ export class OSC {
 			return
 		}
 		if (path === 'addedRoomsList') {
+			this.instance.log('debug', `[addedRoomsList] message received, args: ${JSON.stringify(args)}`)
 			const maxList = this.argInt(args, 0)
 			const thisIndex = this.argInt(args, 1)
 			const roomID = this.argStr(args, 2)
 			const roomName = this.argStr(args, 3)
+			this.instance.log(
+				'debug',
+				`[addedRoomsList] maxList=${maxList} thisIndex=${thisIndex} roomID=${roomID} roomName=${roomName} conditionPasses=${roomID !== undefined && roomName !== undefined && thisIndex !== undefined}`,
+			)
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
 				while (state.addedRooms.length <= thisIndex) {
 					state.addedRooms.push({ roomID: '', roomName: '', roomIndex: state.addedRooms.length + 1 })
@@ -134,16 +138,22 @@ export class OSC {
 				if (thisIndex === (maxList ?? 1) - 1) {
 					state.addedRooms = state.addedRooms.slice(0, maxList ?? thisIndex + 1)
 				}
+				this.instance.log('debug', `[addedRoomsList] state.addedRooms now has ${state.addedRooms.length} entries`)
 				this.instance.updateVariableValues()
 				this.instance.checkFeedbacks()
 			}
 			return
 		}
 		if (path === 'pairedRoomsList') {
+			this.instance.log('debug', `[pairedRoomsList] message received, args: ${JSON.stringify(args)}`)
 			const maxList = this.argInt(args, 0)
 			const thisIndex = this.argInt(args, 1)
 			const roomID = this.argStr(args, 2)
 			const roomName = this.argStr(args, 3)
+			this.instance.log(
+				'debug',
+				`[pairedRoomsList] maxList=${maxList} thisIndex=${thisIndex} roomID=${roomID} roomName=${roomName} conditionPasses=${roomID !== undefined && roomName !== undefined && thisIndex !== undefined}`,
+			)
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
 				while (state.pairedRooms.length <= thisIndex) {
 					state.pairedRooms.push({ roomID: '', roomName: '', roomIndex: state.pairedRooms.length + 1 })
@@ -152,6 +162,7 @@ export class OSC {
 				if (thisIndex === (maxList ?? 1) - 1) {
 					state.pairedRooms = state.pairedRooms.slice(0, maxList ?? thisIndex + 1)
 				}
+				this.instance.log('debug', `[pairedRoomsList] state.pairedRooms now has ${state.pairedRooms.length} entries`)
 				this.instance.updateVariableValues()
 				this.instance.checkFeedbacks()
 			}
