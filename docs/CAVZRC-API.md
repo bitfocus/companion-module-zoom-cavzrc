@@ -362,8 +362,8 @@ Where:
 
 | Address               | Command Payload Arguments                                | Description                                                           |
 | --------------------- | -------------------------------------------------------- | --------------------------------------------------------------------- |
-| `../addedRoomsList`   | `int max_list, int this_index, str roomID, str roomName` | Returns the list of rooms added to the CAVZRC (one message per room)  |
-| `../pairedRoomsList`  | `int max_list, int this_index, str roomID, str roomName` | Returns the list of rooms paired to the CAVZRC (one message per room) |
+| `../addedRoomList`    | `int max_list, int this_index, str roomID, str roomName` | Returns the list of rooms added to the CAVZRC (one message per room)  |
+| `../pairedRoomList`   | `int max_list, int this_index, str roomID, str roomName` | Returns the list of rooms paired to the CAVZRC (one message per room) |
 | `../addedRoomsCount`  | `int count`                                              | Returns the number of rooms added to the CAVZRC                       |
 | `../pairedRoomsCount` | `int count`                                              | Returns the number of rooms paired to the CAVZRC                      |
 
