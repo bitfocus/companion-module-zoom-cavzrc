@@ -87,12 +87,20 @@ export class OSC {
 			port.on('ready', () => {
 				this.instance.log('info', `Listening for CAVZRC OSC on port ${rxPort}`)
 				this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${rxPort}`)
-				this.pollInterval = setInterval(() => {
-					this.sendCommand('/zoomRooms/getAddedRoomList', [])
-					this.sendCommand('/zoomRooms/getPairedRoomList', [])
-					this.sendCommand('/zoomRooms/getAddedRoomCount', [])
-					this.sendCommand('/zoomRooms/getPairedRoomCount', [])
-				}, this.instance.config.pollInterval ?? 1000)
+
+				this.sendCommand('/zoomRooms/getAddedRoomList', [])
+				this.sendCommand('/zoomRooms/getPairedRoomList', [])
+
+				if (this.instance.config.pollInterval && this.instance.config.pollInterval > 0) {
+					this.pollInterval = setInterval(() => {
+						this.sendCommand('/zoomRooms/getAddedRoomList', [])
+						this.sendCommand('/zoomRooms/getPairedRoomList', [])
+						// this.sendCommand('/zoomRooms/getAddedRoomCount', [])
+						// this.sendCommand('/zoomRooms/getPairedRoomCount', [])
+					}, this.instance.config.pollInterval ?? 1000)
+				} else {
+					this.instance.log('info', 'Polling for room data is disabled (pollInterval is 0)')
+				}
 			})
 		} else {
 			this.instance.updateStatus(InstanceStatus.Ok, `Not listening for CAVZRC OSC (rx_port is 0)`)
@@ -131,10 +139,11 @@ export class OSC {
 			return
 		}
 		if (path === 'addedRoomList') {
-			// const maxList = this.argInt(args, 0)
+			const maxList = this.argInt(args, 0)
 			const thisIndex = this.argInt(args, 1)
 			const roomID = this.argStr(args, 2)
 			const roomName = this.argStr(args, 3)
+			state.addedRoomsCount = maxList ?? 0
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
 				const exists = state.addedRooms.some((r) => r.roomID === roomID)
 				if (!exists) {
@@ -142,15 +151,18 @@ export class OSC {
 				}
 				const variables: CompanionVariableValues = {}
 				updateAddedRoomsList(this.instance, variables)
+				updateAddedRoomsCount(this.instance, variables)
 				this.instance.setVariableValues(variables)
 			}
 			return
 		}
 		if (path === 'pairedRoomList') {
-			// const maxList = this.argInt(args, 0)
+			const maxList = this.argInt(args, 0)
 			const thisIndex = this.argInt(args, 1)
 			const roomID = this.argStr(args, 2)
 			const roomName = this.argStr(args, 3)
+			state.pairedRoomsCount = maxList ?? 0
+
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
 				const exists = state.pairedRooms.some((r) => r.roomID === roomID)
 				if (!exists) {
@@ -158,6 +170,7 @@ export class OSC {
 				}
 				const variables: CompanionVariableValues = {}
 				updatePairedRoomsList(this.instance, variables)
+				updatePairedRoomsCount(this.instance, variables)
 				this.instance.setVariableValues(variables)
 				this.instance.checkFeedbacks(FeedbackId.RoomPaired)
 			}

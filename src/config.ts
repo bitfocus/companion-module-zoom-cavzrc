@@ -50,8 +50,9 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 			id: 'pollInterval',
 			label: 'Poll Interval (how often to request room data from CAVZRC)',
 			width: 6,
-			default: 1000,
+			default: 0,
 			choices: [
+				{ id: 0, label: 'Disabled' },
 				{ id: 1000, label: '1 second' },
 				{ id: 2500, label: '2.5 seconds' },
 				{ id: 5000, label: '5 seconds' },
