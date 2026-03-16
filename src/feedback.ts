@@ -1,5 +1,12 @@
-import type { CompanionFeedbackDefinitions } from '@companion-module/base'
+import type { CompanionFeedbackDefinition, CompanionFeedbackDefinitions } from '@companion-module/base'
 import type { ZoomRoomsInstance } from './types.js'
+
+export enum FeedbackId {
+	RoomPaired = 'room_paired',
+	InMeeting = 'in_meeting',
+	MuteStatus = 'mute_status',
+	CameraStatus = 'camera_status',
+}
 
 function roomChoices(instance: ZoomRoomsInstance): { id: string; label: string }[] {
 	const choices = [{ id: '', label: '(Select room)' }]
@@ -18,8 +25,9 @@ export function GetFeedbacks(instance: ZoomRoomsInstance): CompanionFeedbackDefi
 		default: '',
 		choices: roomChoices(instance),
 	}
-	return {
-		room_paired: {
+
+	const feedbacks: { [id in FeedbackId]: CompanionFeedbackDefinition | undefined } = {
+		[FeedbackId.RoomPaired]: {
 			type: 'boolean',
 			name: 'Room is paired',
 			description: 'True when the selected room is in the paired list',
@@ -31,7 +39,7 @@ export function GetFeedbacks(instance: ZoomRoomsInstance): CompanionFeedbackDefi
 				return instance.state.pairedRooms.some((r) => r.roomID === roomId)
 			},
 		},
-		in_meeting: {
+		[FeedbackId.InMeeting]: {
 			type: 'boolean',
 			name: 'In meeting',
 			description: 'True when the selected room is in a meeting',
@@ -46,7 +54,7 @@ export function GetFeedbacks(instance: ZoomRoomsInstance): CompanionFeedbackDefi
 				return status !== '' && status !== 'not in meeting' && status !== 'idle'
 			},
 		},
-		mute_status: {
+		[FeedbackId.MuteStatus]: {
 			type: 'boolean',
 			name: 'Mic unmuted',
 			description: 'True when the room mic is unmuted',
@@ -58,7 +66,7 @@ export function GetFeedbacks(instance: ZoomRoomsInstance): CompanionFeedbackDefi
 				return instance.state.rooms[roomId]?.muteStatus === true
 			},
 		},
-		camera_status: {
+		[FeedbackId.CameraStatus]: {
 			type: 'boolean',
 			name: 'Camera on',
 			description: 'True when the room camera is on',
@@ -71,4 +79,6 @@ export function GetFeedbacks(instance: ZoomRoomsInstance): CompanionFeedbackDefi
 			},
 		},
 	}
+
+	return feedbacks
 }
