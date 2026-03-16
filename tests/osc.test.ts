@@ -2,6 +2,7 @@ import { UDPPort } from 'osc'
 import { OSC } from '../src/osc.js'
 import { createMockInstance } from './helpers/mock-instance.js'
 import type { ZoomRoomsInstance } from '../src/types.js'
+import * as variableValues from '../src/variables/variable-values.js'
 
 type MockPort = { send: jest.Mock; on: jest.Mock; open: jest.Mock; close: jest.Mock }
 
@@ -34,6 +35,8 @@ function createOSCInstance(rxPort = 0): {
 		rx_port: rxPort,
 		oscOutputHeader: '/roomosc',
 	}
+	// Ensure setVariableValues is available for granular update functions
+	;(instance as unknown as Record<string, unknown>).setVariableValues = jest.fn()
 	const mockUpdateVariableValues = instance.updateVariableValues as jest.Mock
 	const mockCheckFeedbacks = instance.checkFeedbacks as jest.Mock
 	const osc = new OSC(instance)
@@ -72,10 +75,10 @@ describe('OSC poll timer', () => {
 		expect(addresses).toContain('/zoomRooms/getAddedRoomList')
 	})
 
-	it('sends 1 command per tick (3 sends after 3 ticks)', () => {
+	it('sends 4 commands per tick (12 sends after 3 ticks)', () => {
 		const { port } = createPollingOSCInstance()
 		jest.advanceTimersByTime(3000)
-		expect(port.send).toHaveBeenCalledTimes(3)
+		expect(port.send).toHaveBeenCalledTimes(12)
 	})
 
 	it('does not send before the first tick', () => {
@@ -87,11 +90,11 @@ describe('OSC poll timer', () => {
 	it('stops polling after destroy()', () => {
 		const { osc, port } = createPollingOSCInstance()
 		jest.advanceTimersByTime(1000)
-		expect(port.send).toHaveBeenCalledTimes(1)
+		expect(port.send).toHaveBeenCalledTimes(4)
 		osc.destroy()
 		jest.advanceTimersByTime(3000)
 		// No additional sends after destroy
-		expect(port.send).toHaveBeenCalledTimes(1)
+		expect(port.send).toHaveBeenCalledTimes(4)
 	})
 
 	it('clears the interval even when destroy is called before first tick', () => {
@@ -171,16 +174,18 @@ describe('OSC addedRoomList message handler', () => {
 		)
 	})
 
-	it('calls updateVariableValues and checkFeedbacks after a new room is added', () => {
-		const { port, mockUpdateVariableValues, mockCheckFeedbacks } = createOSCInstance(1234)
+	it('calls updateAddedRoomsList and checkFeedbacks after a new room is added', () => {
+		const spy = jest.spyOn(variableValues, 'updateAddedRoomsList')
+		const { port, instance, mockCheckFeedbacks } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/addedRoomList', [
 			makeArg('i', 1),
 			makeArg('i', 0),
 			makeArg('s', 'room-id-1'),
 			makeArg('s', 'Room One'),
 		])
-		expect(mockUpdateVariableValues).toHaveBeenCalledTimes(1)
+		expect(spy).toHaveBeenCalledWith(instance)
 		expect(mockCheckFeedbacks).toHaveBeenCalledTimes(1)
+		spy.mockRestore()
 	})
 
 	it('does not add when roomID is undefined', () => {
@@ -256,16 +261,18 @@ describe('OSC pairedRoomList message handler', () => {
 		)
 	})
 
-	it('calls updateVariableValues and checkFeedbacks after a new paired room is added', () => {
-		const { port, mockUpdateVariableValues, mockCheckFeedbacks } = createOSCInstance(1234)
+	it('calls updatePairedRoomsList and checkFeedbacks after a new paired room is added', () => {
+		const spy = jest.spyOn(variableValues, 'updatePairedRoomsList')
+		const { port, instance, mockCheckFeedbacks } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/pairedRoomList', [
 			makeArg('i', 1),
 			makeArg('i', 0),
 			makeArg('s', 'paired-id-1'),
 			makeArg('s', 'Paired Room One'),
 		])
-		expect(mockUpdateVariableValues).toHaveBeenCalledTimes(1)
+		expect(spy).toHaveBeenCalledWith(instance)
 		expect(mockCheckFeedbacks).toHaveBeenCalledTimes(1)
+		spy.mockRestore()
 	})
 
 	it('does not add when roomID is undefined', () => {
