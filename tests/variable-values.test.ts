@@ -1,3 +1,4 @@
+import type { CompanionVariableValues } from '@companion-module/base'
 import {
 	updateAddedRoomsCount,
 	updatePairedRoomsCount,
@@ -26,30 +27,38 @@ function makeMockInstance(stateOverrides: Partial<ZoomRoomsInstance['state']> = 
 }
 
 describe('updateAddedRoomsCount', () => {
-	it('sets added_rooms_count to state value', () => {
+	it('writes added_rooms_count to variables object', () => {
 		const { instance, setVariableValues } = makeMockInstance({ addedRoomsCount: 5 })
-		updateAddedRoomsCount(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ added_rooms_count: 5 })
+		const variables: CompanionVariableValues = {}
+		updateAddedRoomsCount(instance, variables)
+		expect(variables['added_rooms_count']).toBe(5)
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 
-	it('sets added_rooms_count to 0 when state is 0', () => {
+	it('writes added_rooms_count as 0 when state is 0', () => {
 		const { instance, setVariableValues } = makeMockInstance({ addedRoomsCount: 0 })
-		updateAddedRoomsCount(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ added_rooms_count: 0 })
+		const variables: CompanionVariableValues = {}
+		updateAddedRoomsCount(instance, variables)
+		expect(variables['added_rooms_count']).toBe(0)
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 })
 
 describe('updatePairedRoomsCount', () => {
-	it('sets paired_rooms_count to state value', () => {
+	it('writes paired_rooms_count to variables object', () => {
 		const { instance, setVariableValues } = makeMockInstance({ pairedRoomsCount: 3 })
-		updatePairedRoomsCount(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ paired_rooms_count: 3 })
+		const variables: CompanionVariableValues = {}
+		updatePairedRoomsCount(instance, variables)
+		expect(variables['paired_rooms_count']).toBe(3)
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 
-	it('sets paired_rooms_count to 0 when state is 0', () => {
+	it('writes paired_rooms_count as 0 when state is 0', () => {
 		const { instance, setVariableValues } = makeMockInstance({ pairedRoomsCount: 0 })
-		updatePairedRoomsCount(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ paired_rooms_count: 0 })
+		const variables: CompanionVariableValues = {}
+		updatePairedRoomsCount(instance, variables)
+		expect(variables['paired_rooms_count']).toBe(0)
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 })
 
@@ -61,14 +70,18 @@ describe('updateAddedRoomsList', () => {
 				{ roomID: 'r2', roomName: 'Room Two', roomIndex: 1 },
 			],
 		})
-		updateAddedRoomsList(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ added_rooms_list: 'Room One, Room Two' })
+		const variables: CompanionVariableValues = {}
+		updateAddedRoomsList(instance, variables)
+		expect(variables['added_rooms_list']).toBe('Room One, Room Two')
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 
 	it('returns "—" when addedRooms is empty', () => {
 		const { instance, setVariableValues } = makeMockInstance({ addedRooms: [] })
-		updateAddedRoomsList(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ added_rooms_list: '—' })
+		const variables: CompanionVariableValues = {}
+		updateAddedRoomsList(instance, variables)
+		expect(variables['added_rooms_list']).toBe('—')
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 
 	it('filters out rooms with empty names', () => {
@@ -78,16 +91,20 @@ describe('updateAddedRoomsList', () => {
 				{ roomID: 'r2', roomName: '', roomIndex: 1 },
 			],
 		})
-		updateAddedRoomsList(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ added_rooms_list: 'Room One' })
+		const variables: CompanionVariableValues = {}
+		updateAddedRoomsList(instance, variables)
+		expect(variables['added_rooms_list']).toBe('Room One')
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 
 	it('returns "—" when all room names are empty', () => {
 		const { instance, setVariableValues } = makeMockInstance({
 			addedRooms: [{ roomID: 'r1', roomName: '', roomIndex: 0 }],
 		})
-		updateAddedRoomsList(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ added_rooms_list: '—' })
+		const variables: CompanionVariableValues = {}
+		updateAddedRoomsList(instance, variables)
+		expect(variables['added_rooms_list']).toBe('—')
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 })
 
@@ -99,14 +116,18 @@ describe('updatePairedRoomsList', () => {
 				{ roomID: 'p2', roomName: 'Paired Two', roomIndex: 1 },
 			],
 		})
-		updatePairedRoomsList(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ paired_rooms_list: 'Paired One, Paired Two' })
+		const variables: CompanionVariableValues = {}
+		updatePairedRoomsList(instance, variables)
+		expect(variables['paired_rooms_list']).toBe('Paired One, Paired Two')
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 
 	it('returns "—" when pairedRooms is empty', () => {
 		const { instance, setVariableValues } = makeMockInstance({ pairedRooms: [] })
-		updatePairedRoomsList(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ paired_rooms_list: '—' })
+		const variables: CompanionVariableValues = {}
+		updatePairedRoomsList(instance, variables)
+		expect(variables['paired_rooms_list']).toBe('—')
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 
 	it('filters out rooms with empty names', () => {
@@ -116,15 +137,19 @@ describe('updatePairedRoomsList', () => {
 				{ roomID: 'p2', roomName: '', roomIndex: 1 },
 			],
 		})
-		updatePairedRoomsList(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ paired_rooms_list: 'Paired One' })
+		const variables: CompanionVariableValues = {}
+		updatePairedRoomsList(instance, variables)
+		expect(variables['paired_rooms_list']).toBe('Paired One')
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 
 	it('returns "—" when all room names are empty', () => {
 		const { instance, setVariableValues } = makeMockInstance({
 			pairedRooms: [{ roomID: 'p1', roomName: '', roomIndex: 0 }],
 		})
-		updatePairedRoomsList(instance)
-		expect(setVariableValues).toHaveBeenCalledWith({ paired_rooms_list: '—' })
+		const variables: CompanionVariableValues = {}
+		updatePairedRoomsList(instance, variables)
+		expect(variables['paired_rooms_list']).toBe('—')
+		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 })

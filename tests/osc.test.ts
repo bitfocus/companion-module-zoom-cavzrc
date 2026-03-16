@@ -2,7 +2,6 @@ import { UDPPort } from 'osc'
 import { OSC } from '../src/osc.js'
 import { createMockInstance } from './helpers/mock-instance.js'
 import type { ZoomRoomsInstance } from '../src/types.js'
-import * as variableValues from '../src/variables/variable-values.js'
 
 type MockPort = { send: jest.Mock; on: jest.Mock; open: jest.Mock; close: jest.Mock }
 
@@ -174,8 +173,7 @@ describe('OSC addedRoomList message handler', () => {
 		)
 	})
 
-	it('calls updateAddedRoomsList and checkFeedbacks after a new room is added', () => {
-		const spy = jest.spyOn(variableValues, 'updateAddedRoomsList')
+	it('calls setVariableValues with added_rooms_list and checkFeedbacks after a new room is added', () => {
 		const { port, instance, mockCheckFeedbacks } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/addedRoomList', [
 			makeArg('i', 1),
@@ -183,9 +181,8 @@ describe('OSC addedRoomList message handler', () => {
 			makeArg('s', 'room-id-1'),
 			makeArg('s', 'Room One'),
 		])
-		expect(spy).toHaveBeenCalledWith(instance)
+		expect(instance.setVariableValues).toHaveBeenCalledWith(expect.objectContaining({ added_rooms_list: 'Room One' }))
 		expect(mockCheckFeedbacks).toHaveBeenCalledTimes(1)
-		spy.mockRestore()
 	})
 
 	it('does not add when roomID is undefined', () => {
@@ -261,8 +258,7 @@ describe('OSC pairedRoomList message handler', () => {
 		)
 	})
 
-	it('calls updatePairedRoomsList and checkFeedbacks after a new paired room is added', () => {
-		const spy = jest.spyOn(variableValues, 'updatePairedRoomsList')
+	it('calls setVariableValues with paired_rooms_list and checkFeedbacks after a new paired room is added', () => {
 		const { port, instance, mockCheckFeedbacks } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/pairedRoomList', [
 			makeArg('i', 1),
@@ -270,9 +266,10 @@ describe('OSC pairedRoomList message handler', () => {
 			makeArg('s', 'paired-id-1'),
 			makeArg('s', 'Paired Room One'),
 		])
-		expect(spy).toHaveBeenCalledWith(instance)
+		expect(instance.setVariableValues).toHaveBeenCalledWith(
+			expect.objectContaining({ paired_rooms_list: 'Paired Room One' }),
+		)
 		expect(mockCheckFeedbacks).toHaveBeenCalledTimes(1)
-		spy.mockRestore()
 	})
 
 	it('does not add when roomID is undefined', () => {

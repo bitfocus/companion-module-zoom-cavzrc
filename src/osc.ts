@@ -1,4 +1,5 @@
 import { InstanceStatus } from '@companion-module/base'
+import type { CompanionVariableValues } from '@companion-module/base'
 import { UDPPort } from 'osc'
 import type { OscArgument } from 'osc'
 import type { ZoomRoomsInstance } from './types.js'
@@ -112,7 +113,9 @@ export class OSC {
 			const count = this.argInt(args, 0)
 			if (count !== undefined) {
 				state.addedRoomsCount = count
-				updateAddedRoomsCount(this.instance)
+				const variables: CompanionVariableValues = {}
+				updateAddedRoomsCount(this.instance, variables)
+				this.instance.setVariableValues(variables)
 				this.instance.checkFeedbacks()
 			}
 			return
@@ -121,7 +124,9 @@ export class OSC {
 			const count = this.argInt(args, 0)
 			if (count !== undefined) {
 				state.pairedRoomsCount = count
-				updatePairedRoomsCount(this.instance)
+				const variables: CompanionVariableValues = {}
+				updatePairedRoomsCount(this.instance, variables)
+				this.instance.setVariableValues(variables)
 				this.instance.checkFeedbacks()
 			}
 			return
@@ -136,7 +141,9 @@ export class OSC {
 				if (!exists) {
 					state.addedRooms.push({ roomID, roomName, roomIndex: thisIndex + 1 })
 				}
-				updateAddedRoomsList(this.instance)
+				const variables: CompanionVariableValues = {}
+				updateAddedRoomsList(this.instance, variables)
+				this.instance.setVariableValues(variables)
 				this.instance.checkFeedbacks()
 			}
 			return
@@ -151,7 +158,9 @@ export class OSC {
 				if (!exists) {
 					state.pairedRooms.push({ roomID, roomName, roomIndex: thisIndex + 1 })
 				}
-				updatePairedRoomsList(this.instance)
+				const variables: CompanionVariableValues = {}
+				updatePairedRoomsList(this.instance, variables)
+				this.instance.setVariableValues(variables)
 				this.instance.checkFeedbacks()
 			}
 			return
