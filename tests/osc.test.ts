@@ -112,132 +112,81 @@ describe('OSC addedRoomList message handler', () => {
 		jest.useRealTimers()
 	})
 
-	it('calls updateVariableValues on the first message (not just the last)', () => {
-		const { port, mockUpdateVariableValues } = createOSCInstance(1234)
-		// Simulate first of two rooms: maxList=2, thisIndex=0
+	it('adds a new room when roomID is not in state', () => {
+		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/addedRoomList', [
+			makeArg('i', 1),
+			makeArg('i', 0),
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+		])
+		expect(instance.state.addedRooms).toHaveLength(1)
+		expect(instance.state.addedRooms[0]).toMatchObject({ roomID: 'room-id-1', roomName: 'Room One', roomIndex: 1 })
+	})
+
+	it('does not add a duplicate when same roomID arrives again', () => {
+		const { port, instance } = createOSCInstance(1234)
+		triggerMessage(port, '/roomosc/addedRoomList', [
+			makeArg('i', 1),
+			makeArg('i', 0),
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+		])
+		triggerMessage(port, '/roomosc/addedRoomList', [
+			makeArg('i', 1),
+			makeArg('i', 0),
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+		])
+		expect(instance.state.addedRooms).toHaveLength(1)
+	})
+
+	it('adds multiple distinct rooms from separate messages', () => {
+		const { port, instance } = createOSCInstance(1234)
+		triggerMessage(port, '/roomosc/addedRoomList', [
+			makeArg('i', 3),
+			makeArg('i', 0),
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+		])
+		triggerMessage(port, '/roomosc/addedRoomList', [
+			makeArg('i', 3),
+			makeArg('i', 1),
+			makeArg('s', 'room-id-2'),
+			makeArg('s', 'Room Two'),
+		])
+		triggerMessage(port, '/roomosc/addedRoomList', [
+			makeArg('i', 3),
 			makeArg('i', 2),
+			makeArg('s', 'room-id-3'),
+			makeArg('s', 'Room Three'),
+		])
+		expect(instance.state.addedRooms).toHaveLength(3)
+		expect(instance.state.addedRooms).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ roomID: 'room-id-1' }),
+				expect.objectContaining({ roomID: 'room-id-2' }),
+				expect.objectContaining({ roomID: 'room-id-3' }),
+			]),
+		)
+	})
+
+	it('calls updateVariableValues and checkFeedbacks after a new room is added', () => {
+		const { port, mockUpdateVariableValues, mockCheckFeedbacks } = createOSCInstance(1234)
+		triggerMessage(port, '/roomosc/addedRoomList', [
+			makeArg('i', 1),
 			makeArg('i', 0),
 			makeArg('s', 'room-id-1'),
 			makeArg('s', 'Room One'),
 		])
 		expect(mockUpdateVariableValues).toHaveBeenCalledTimes(1)
+		expect(mockCheckFeedbacks).toHaveBeenCalledTimes(1)
 	})
 
-	it('calls updateVariableValues on every message in a multi-room list', () => {
-		const { port, mockUpdateVariableValues } = createOSCInstance(1234)
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 2),
-			makeArg('i', 0),
-			makeArg('s', 'room-id-1'),
-			makeArg('s', 'Room One'),
-		])
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 2),
-			makeArg('i', 1),
-			makeArg('s', 'room-id-2'),
-			makeArg('s', 'Room Two'),
-		])
-		expect(mockUpdateVariableValues).toHaveBeenCalledTimes(2)
-	})
-
-	it('updates state.addedRooms after first message', () => {
+	it('does not add when roomID is undefined', () => {
 		const { port, instance } = createOSCInstance(1234)
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 1),
-			makeArg('i', 0),
-			makeArg('s', 'room-id-a'),
-			makeArg('s', 'Alpha Room'),
-		])
-		expect(instance.state.addedRooms[0]).toMatchObject({ roomID: 'room-id-a', roomName: 'Alpha Room' })
-	})
-
-	it('trims addedRooms to maxList on the last message', () => {
-		const { port, instance } = createOSCInstance(1234)
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 1),
-			makeArg('i', 0),
-			makeArg('s', 'room-id-a'),
-			makeArg('s', 'Alpha Room'),
-		])
-		expect(instance.state.addedRooms).toHaveLength(1)
-	})
-
-	it('trims stale rooms when maxList decreases in a new poll batch', () => {
-		const { port, instance } = createOSCInstance(1234)
-		// First batch: 3 rooms
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 3),
-			makeArg('i', 0),
-			makeArg('s', 'id-1'),
-			makeArg('s', 'Room One'),
-		])
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 3),
-			makeArg('i', 1),
-			makeArg('s', 'id-2'),
-			makeArg('s', 'Room Two'),
-		])
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 3),
-			makeArg('i', 2),
-			makeArg('s', 'id-3'),
-			makeArg('s', 'Room Three'),
-		])
-		expect(instance.state.addedRooms).toHaveLength(3)
-		// Second batch: only 1 room (a room was removed)
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 1),
-			makeArg('i', 0),
-			makeArg('s', 'id-1'),
-			makeArg('s', 'Room One'),
-		])
-		expect(instance.state.addedRooms).toHaveLength(1)
-		expect(instance.state.addedRooms[0]).toMatchObject({ roomID: 'id-1', roomName: 'Room One' })
-	})
-
-	it('handles out-of-order messages (index 1 before index 0)', () => {
-		const { port, instance } = createOSCInstance(1234)
-		// index 1 arrives first
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 2),
-			makeArg('i', 1),
-			makeArg('s', 'room-id-2'),
-			makeArg('s', 'Room Two'),
-		])
-		// index 0 arrives second
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 2),
-			makeArg('i', 0),
-			makeArg('s', 'room-id-1'),
-			makeArg('s', 'Room One'),
-		])
-		expect(instance.state.addedRooms).toHaveLength(2)
-		expect(instance.state.addedRooms[0]).toMatchObject({ roomID: 'room-id-1', roomName: 'Room One' })
-		expect(instance.state.addedRooms[1]).toMatchObject({ roomID: 'room-id-2', roomName: 'Room Two' })
-	})
-
-	it('trims array to maxList immediately when maxList shrinks (first message of new batch)', () => {
-		const { port, instance } = createOSCInstance(1234)
-		// First batch: 3 rooms
-		for (let i = 0; i < 3; i++) {
-			triggerMessage(port, '/roomosc/addedRoomList', [
-				makeArg('i', 3),
-				makeArg('i', i),
-				makeArg('s', `id-${i + 1}`),
-				makeArg('s', `Room ${i + 1}`),
-			])
-		}
-		expect(instance.state.addedRooms).toHaveLength(3)
-		// First message of second batch has maxList=1 — array must be trimmed immediately
-		triggerMessage(port, '/roomosc/addedRoomList', [
-			makeArg('i', 1),
-			makeArg('i', 0),
-			makeArg('s', 'id-1'),
-			makeArg('s', 'Room One'),
-		])
-		expect(instance.state.addedRooms).toHaveLength(1)
-		expect(instance.state.addedRooms[0]).toMatchObject({ roomID: 'id-1' })
+		triggerMessage(port, '/roomosc/addedRoomList', [makeArg('i', 1), makeArg('i', 0), makeArg('s', 'Room One')])
+		expect(instance.state.addedRooms).toHaveLength(0)
 	})
 })
 
@@ -251,19 +200,41 @@ describe('OSC pairedRoomList message handler', () => {
 		jest.useRealTimers()
 	})
 
-	it('calls updateVariableValues on the first message (not just the last)', () => {
-		const { port, mockUpdateVariableValues } = createOSCInstance(1234)
+	it('adds a new paired room when roomID is not in state', () => {
+		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/pairedRoomList', [
-			makeArg('i', 3),
+			makeArg('i', 1),
 			makeArg('i', 0),
 			makeArg('s', 'paired-id-1'),
 			makeArg('s', 'Paired Room One'),
 		])
-		expect(mockUpdateVariableValues).toHaveBeenCalledTimes(1)
+		expect(instance.state.pairedRooms).toHaveLength(1)
+		expect(instance.state.pairedRooms[0]).toMatchObject({
+			roomID: 'paired-id-1',
+			roomName: 'Paired Room One',
+			roomIndex: 1,
+		})
 	})
 
-	it('calls updateVariableValues on every message in a multi-room list', () => {
-		const { port, mockUpdateVariableValues } = createOSCInstance(1234)
+	it('does not add a duplicate when same roomID arrives again', () => {
+		const { port, instance } = createOSCInstance(1234)
+		triggerMessage(port, '/roomosc/pairedRoomList', [
+			makeArg('i', 1),
+			makeArg('i', 0),
+			makeArg('s', 'paired-id-1'),
+			makeArg('s', 'Paired Room One'),
+		])
+		triggerMessage(port, '/roomosc/pairedRoomList', [
+			makeArg('i', 1),
+			makeArg('i', 0),
+			makeArg('s', 'paired-id-1'),
+			makeArg('s', 'Paired Room One'),
+		])
+		expect(instance.state.pairedRooms).toHaveLength(1)
+	})
+
+	it('adds multiple distinct paired rooms from separate messages', () => {
+		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/pairedRoomList', [
 			makeArg('i', 2),
 			makeArg('i', 0),
@@ -276,99 +247,30 @@ describe('OSC pairedRoomList message handler', () => {
 			makeArg('s', 'paired-id-2'),
 			makeArg('s', 'Paired Room Two'),
 		])
-		expect(mockUpdateVariableValues).toHaveBeenCalledTimes(2)
-	})
-
-	it('updates state.pairedRooms after first message', () => {
-		const { port, instance } = createOSCInstance(1234)
-		triggerMessage(port, '/roomosc/pairedRoomList', [
-			makeArg('i', 1),
-			makeArg('i', 0),
-			makeArg('s', 'paired-id-b'),
-			makeArg('s', 'Beta Room'),
-		])
-		expect(instance.state.pairedRooms[0]).toMatchObject({ roomID: 'paired-id-b', roomName: 'Beta Room' })
-	})
-
-	it('trims pairedRooms to maxList on the last message', () => {
-		const { port, instance } = createOSCInstance(1234)
-		triggerMessage(port, '/roomosc/pairedRoomList', [
-			makeArg('i', 1),
-			makeArg('i', 0),
-			makeArg('s', 'paired-id-b'),
-			makeArg('s', 'Beta Room'),
-		])
-		expect(instance.state.pairedRooms).toHaveLength(1)
-	})
-
-	it('trims stale rooms when maxList decreases in a new poll batch', () => {
-		const { port, instance } = createOSCInstance(1234)
-		// First batch: 2 rooms
-		triggerMessage(port, '/roomosc/pairedRoomList', [
-			makeArg('i', 2),
-			makeArg('i', 0),
-			makeArg('s', 'pid-1'),
-			makeArg('s', 'Paired One'),
-		])
-		triggerMessage(port, '/roomosc/pairedRoomList', [
-			makeArg('i', 2),
-			makeArg('i', 1),
-			makeArg('s', 'pid-2'),
-			makeArg('s', 'Paired Two'),
-		])
 		expect(instance.state.pairedRooms).toHaveLength(2)
-		// Second batch: only 1 room
-		triggerMessage(port, '/roomosc/pairedRoomList', [
-			makeArg('i', 1),
-			makeArg('i', 0),
-			makeArg('s', 'pid-1'),
-			makeArg('s', 'Paired One'),
-		])
-		expect(instance.state.pairedRooms).toHaveLength(1)
-		expect(instance.state.pairedRooms[0]).toMatchObject({ roomID: 'pid-1', roomName: 'Paired One' })
+		expect(instance.state.pairedRooms).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ roomID: 'paired-id-1' }),
+				expect.objectContaining({ roomID: 'paired-id-2' }),
+			]),
+		)
 	})
 
-	it('handles out-of-order messages (index 1 before index 0)', () => {
-		const { port, instance } = createOSCInstance(1234)
-		// index 1 arrives first
+	it('calls updateVariableValues and checkFeedbacks after a new paired room is added', () => {
+		const { port, mockUpdateVariableValues, mockCheckFeedbacks } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/pairedRoomList', [
-			makeArg('i', 2),
 			makeArg('i', 1),
-			makeArg('s', 'paired-id-2'),
-			makeArg('s', 'Paired Two'),
-		])
-		// index 0 arrives second
-		triggerMessage(port, '/roomosc/pairedRoomList', [
-			makeArg('i', 2),
 			makeArg('i', 0),
 			makeArg('s', 'paired-id-1'),
-			makeArg('s', 'Paired One'),
+			makeArg('s', 'Paired Room One'),
 		])
-		expect(instance.state.pairedRooms).toHaveLength(2)
-		expect(instance.state.pairedRooms[0]).toMatchObject({ roomID: 'paired-id-1', roomName: 'Paired One' })
-		expect(instance.state.pairedRooms[1]).toMatchObject({ roomID: 'paired-id-2', roomName: 'Paired Two' })
+		expect(mockUpdateVariableValues).toHaveBeenCalledTimes(1)
+		expect(mockCheckFeedbacks).toHaveBeenCalledTimes(1)
 	})
 
-	it('trims array to maxList immediately when maxList shrinks (first message of new batch)', () => {
+	it('does not add when roomID is undefined', () => {
 		const { port, instance } = createOSCInstance(1234)
-		// First batch: 3 rooms
-		for (let i = 0; i < 3; i++) {
-			triggerMessage(port, '/roomosc/pairedRoomList', [
-				makeArg('i', 3),
-				makeArg('i', i),
-				makeArg('s', `pid-${i + 1}`),
-				makeArg('s', `Paired ${i + 1}`),
-			])
-		}
-		expect(instance.state.pairedRooms).toHaveLength(3)
-		// First message of second batch has maxList=1 — array must be trimmed immediately
-		triggerMessage(port, '/roomosc/pairedRoomList', [
-			makeArg('i', 1),
-			makeArg('i', 0),
-			makeArg('s', 'pid-1'),
-			makeArg('s', 'Paired One'),
-		])
-		expect(instance.state.pairedRooms).toHaveLength(1)
-		expect(instance.state.pairedRooms[0]).toMatchObject({ roomID: 'pid-1' })
+		triggerMessage(port, '/roomosc/pairedRoomList', [makeArg('i', 1), makeArg('i', 0), makeArg('s', 'Paired Room One')])
+		expect(instance.state.pairedRooms).toHaveLength(0)
 	})
 })

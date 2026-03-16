@@ -131,14 +131,10 @@ export class OSC {
 				`[addedRoomList] maxList=${maxList} thisIndex=${thisIndex} roomID=${roomID} roomName=${roomName} conditionPasses=${roomID !== undefined && roomName !== undefined && thisIndex !== undefined}`,
 			)
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
-				while (state.addedRooms.length <= thisIndex) {
-					state.addedRooms.push({ roomID: '', roomName: '', roomIndex: state.addedRooms.length + 1 })
+				const exists = state.addedRooms.some((r) => r.roomID === roomID)
+				if (!exists) {
+					state.addedRooms.push({ roomID, roomName, roomIndex: thisIndex + 1 })
 				}
-				state.addedRooms[thisIndex] = { roomID, roomName, roomIndex: thisIndex + 1 }
-				if (maxList !== undefined && state.addedRooms.length > maxList) {
-					state.addedRooms.length = maxList
-				}
-
 				this.instance.log('debug', `[addedRoomList] state.addedRooms now has ${state.addedRooms.length} entries`)
 				this.instance.updateVariableValues()
 				this.instance.checkFeedbacks()
@@ -146,17 +142,13 @@ export class OSC {
 			return
 		}
 		if (path === 'pairedRoomList') {
-			const maxList = this.argInt(args, 0)
 			const thisIndex = this.argInt(args, 1)
 			const roomID = this.argStr(args, 2)
 			const roomName = this.argStr(args, 3)
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
-				while (state.pairedRooms.length <= thisIndex) {
-					state.pairedRooms.push({ roomID: '', roomName: '', roomIndex: state.pairedRooms.length + 1 })
-				}
-				state.pairedRooms[thisIndex] = { roomID, roomName, roomIndex: thisIndex + 1 }
-				if (maxList !== undefined && state.pairedRooms.length > maxList) {
-					state.pairedRooms.length = maxList
+				const exists = state.pairedRooms.some((r) => r.roomID === roomID)
+				if (!exists) {
+					state.pairedRooms.push({ roomID, roomName, roomIndex: thisIndex + 1 })
 				}
 				this.instance.updateVariableValues()
 				this.instance.checkFeedbacks()
