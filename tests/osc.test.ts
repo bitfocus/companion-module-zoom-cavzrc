@@ -173,8 +173,8 @@ describe('OSC addedRoomList message handler', () => {
 		)
 	})
 
-	it('calls setVariableValues with added_rooms_list and checkFeedbacks after a new room is added', () => {
-		const { port, instance, mockCheckFeedbacks } = createOSCInstance(1234)
+	it('calls setVariableValues with added_rooms_list after a new room is added', () => {
+		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/addedRoomList', [
 			makeArg('i', 1),
 			makeArg('i', 0),
@@ -182,7 +182,6 @@ describe('OSC addedRoomList message handler', () => {
 			makeArg('s', 'Room One'),
 		])
 		expect(instance.setVariableValues).toHaveBeenCalledWith(expect.objectContaining({ added_rooms_list: 'Room One' }))
-		expect(mockCheckFeedbacks).toHaveBeenCalledTimes(1)
 	})
 
 	it('does not add when roomID is undefined', () => {

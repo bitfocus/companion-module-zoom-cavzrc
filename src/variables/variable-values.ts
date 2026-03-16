@@ -32,8 +32,8 @@ export function updateVariableValues(instance: ZoomRoomsInstance): void {
 	updateAddedRoomsList(instance, variables)
 	updatePairedRoomsList(instance, variables)
 	const state = instance.state
-	state.pairedRooms.slice(0, 10).forEach((r, i) => {
-		const n = i + 1
+	state.pairedRooms.forEach((r) => {
+		const n = r.roomIndex
 		variables[`room_${n}_id`] = r.roomID
 		variables[`room_${n}_name`] = r.roomName || '—'
 		const room = state.rooms[r.roomID]

@@ -9,6 +9,7 @@ import {
 	updateAddedRoomsList,
 	updatePairedRoomsList,
 } from './variables/variable-values.js'
+import { FeedbackId } from './feedback.js'
 
 export class OSC {
 	private readonly instance: ZoomRoomsInstance
@@ -91,7 +92,7 @@ export class OSC {
 					this.sendCommand('/zoomRooms/getPairedRoomList', [])
 					this.sendCommand('/zoomRooms/getAddedRoomCount', [])
 					this.sendCommand('/zoomRooms/getPairedRoomCount', [])
-				}, 1000)
+				}, this.instance.config.pollInterval ?? 1000)
 			})
 		} else {
 			this.instance.updateStatus(InstanceStatus.Ok, `Not listening for CAVZRC OSC (rx_port is 0)`)
@@ -116,7 +117,6 @@ export class OSC {
 				const variables: CompanionVariableValues = {}
 				updateAddedRoomsCount(this.instance, variables)
 				this.instance.setVariableValues(variables)
-				this.instance.checkFeedbacks()
 			}
 			return
 		}
@@ -127,7 +127,6 @@ export class OSC {
 				const variables: CompanionVariableValues = {}
 				updatePairedRoomsCount(this.instance, variables)
 				this.instance.setVariableValues(variables)
-				this.instance.checkFeedbacks()
 			}
 			return
 		}
@@ -144,7 +143,6 @@ export class OSC {
 				const variables: CompanionVariableValues = {}
 				updateAddedRoomsList(this.instance, variables)
 				this.instance.setVariableValues(variables)
-				this.instance.checkFeedbacks()
 			}
 			return
 		}
@@ -161,7 +159,7 @@ export class OSC {
 				const variables: CompanionVariableValues = {}
 				updatePairedRoomsList(this.instance, variables)
 				this.instance.setVariableValues(variables)
-				this.instance.checkFeedbacks()
+				this.instance.checkFeedbacks(FeedbackId.RoomPaired)
 			}
 			return
 		}
@@ -182,21 +180,20 @@ export class OSC {
 			if (path === 'meetingStatus') {
 				room.meetingStatus = this.argStr(args, 3)
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
+				this.instance.checkFeedbacks(FeedbackId.InMeeting)
 			} else if (path === 'participantCount') {
 				room.participantCount = this.argInt(args, 3)
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
 			} else if (path === 'muteStatus') {
 				const v = args[3]
 				room.muteStatus = v?.type === 'i' ? (v as { value: number }).value === 1 : (v as { value: boolean })?.value
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
+				this.instance.checkFeedbacks(FeedbackId.MuteStatus)
 			} else if (path === 'cameraStatus') {
 				const v = args[3]
 				room.cameraStatus = v?.type === 'i' ? (v as { value: number }).value === 1 : (v as { value: boolean })?.value
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
+				this.instance.checkFeedbacks(FeedbackId.CameraStatus)
 			} else if (path === 'selectedPrimaryCamera') {
 				room.selectedPrimaryCamera = this.argStr(args, 3)
 				this.instance.updateVariableValues()
