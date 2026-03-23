@@ -15,8 +15,24 @@ const ROOM_TARGET_OPTIONS: SomeCompanionActionInputField[] = [
 			{ id: 'allRooms', label: 'All rooms' },
 		],
 	},
-	{ type: 'textinput', label: 'Room ID', id: 'roomID', default: '', isVisible: (o) => o.targetType === 'roomID' },
-	{ type: 'textinput', label: 'Room name', id: 'roomName', default: '', isVisible: (o) => o.targetType === 'roomName' },
+	{
+		type: 'textinput',
+		label: 'Room ID',
+		id: 'roomID',
+		default: '',
+		useVariables: true,
+
+		isVisible: (o) => o.targetType === 'roomID',
+	},
+	{
+		type: 'textinput',
+		label: 'Room name',
+		id: 'roomName',
+		default: '',
+		useVariables: true,
+
+		isVisible: (o) => o.targetType === 'roomName',
+	},
 	{
 		type: 'number',
 		label: 'Room index (1-based)',
