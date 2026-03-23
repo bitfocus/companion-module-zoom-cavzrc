@@ -45,7 +45,7 @@
     "*.{css,json,md,scss}": [
       "prettier --write"
     ],
-    "*.{ts,tsx,js,jsx}": [
+    "*.{ts,tsx,js,jsx},!.squad/**": [
       "yarn lint:raw --fix"
     ]
   },
