@@ -1,95 +1,118 @@
-import type { CompanionActionDefinitions, SomeCompanionActionInputField } from '@companion-module/base'
+import type { CompanionActionDefinitions, CompanionActionDefinition } from '@companion-module/base'
 import type { ZoomRoomsInstance } from './types.js'
-import type { TargetType } from './utils.js'
+import {
+	ROOM_TARGET_OPTIONS,
+	CHANNEL_NUM_OPTION,
+	roomCommand,
+	roomCommandWithOpts,
+} from './actions/action-room-utils.js'
+import { ActionIdJoinFlow, GetActionsJoinFlow } from './actions/action-join-flow.js'
 
-const ROOM_TARGET_OPTIONS: SomeCompanionActionInputField[] = [
-	{
-		type: 'dropdown',
-		label: 'Target type',
-		id: 'targetType',
-		default: 'roomIndex',
-		choices: [
-			{ id: 'roomID', label: 'Room ID' },
-			{ id: 'roomName', label: 'Room name' },
-			{ id: 'roomIndex', label: 'Room index' },
-			{ id: 'allRooms', label: 'All rooms' },
-		],
-	},
-	{
-		type: 'textinput',
-		label: 'Room ID',
-		id: 'roomID',
-		default: '',
-		useVariables: true,
+export enum ActionId {
+	// ---- Global ----
+	getAddedRoomList = 'getAddedRoomList',
+	getPairedRoomList = 'getPairedRoomList',
+	getAddedRoomCount = 'getAddedRoomCount',
+	getPairedRoomCount = 'getPairedRoomCount',
 
-		isVisible: (o) => o.targetType === 'roomID',
-	},
-	{
-		type: 'textinput',
-		label: 'Room name',
-		id: 'roomName',
-		default: '',
-		useVariables: true,
+	// ---- NDI ----
+	setNDIContentOff = 'setNDIContentOff',
+	setNDIContentParticipant = 'setNDIContentParticipant',
+	setNDIContentActiveSpeaker = 'setNDIContentActiveSpeaker',
+	setNDIContentGallery = 'setNDIContentGallery',
+	setNDIContentScreenshare = 'setNDIContentScreenshare',
+	setNDIContentSpotlight = 'setNDIContentSpotlight',
+	setNDIContentPinGroup = 'setNDIContentPinGroup',
+	setNDIParticipantSelection = 'setNDIParticipantSelection',
+	setNDIGallerySelection = 'setNDIGallerySelection',
+	setNDIScreenshareSelection = 'setNDIScreenshareSelection',
+	setNDIPinGroupSelection = 'setNDIPinGroupSelection',
+	getNDIChannelConfig = 'getNDIChannelConfig',
+	getNDIChannelCount = 'getNDIChannelCount',
 
-		isVisible: (o) => o.targetType === 'roomName',
-	},
-	{
-		type: 'textinput',
-		label: 'Room index (1-based)',
-		id: 'roomIndex',
-		default: '1',
-		useVariables: true,
-		isVisible: (o) => o.targetType === 'roomIndex',
-	},
-]
+	// ---- HWIO ----
+	setHWIOMode = 'setHWIOMode',
+	setHWIOInputSelection = 'setHWIOInputSelection',
+	setHWIOContentOff = 'setHWIOContentOff',
+	setHWIOContentTestSignal = 'setHWIOContentTestSignal',
+	setHWIOContentParticipant = 'setHWIOContentParticipant',
+	setHWIOContentActiveSpeaker = 'setHWIOContentActiveSpeaker',
+	setHWIOContentGallery = 'setHWIOContentGallery',
+	setHWIOContentScreenshare = 'setHWIOContentScreenshare',
+	setHWIOContentSpotlight = 'setHWIOContentSpotlight',
+	setHWIOContentPinGroup = 'setHWIOContentPinGroup',
+	setHWIOResolutionFrameRate = 'setHWIOResolutionFrameRate',
+	setHWIOAudioMix = 'setHWIOAudioMix',
+	setHWIOParticipantSelection = 'setHWIOParticipantSelection',
+	setHWIOGallerySelection = 'setHWIOGallerySelection',
+	setHWIOScreenshareSelection = 'setHWIOScreenshareSelection',
+	setHWIOPinGroupSelection = 'setHWIOPinGroupSelection',
+	getHWIOChannelConfig = 'getHWIOChannelConfig',
+	getHWIOChannelCount = 'getHWIOChannelCount',
+	getHWIOSupportedResolutionFrameRate = 'getHWIOSupportedResolutionFrameRate',
 
-const CHANNEL_NUM_OPTION: SomeCompanionActionInputField = {
-	type: 'number',
-	label: 'Channel',
-	id: 'channel_num',
-	default: 1,
-	min: 1,
-	max: 64,
-}
+	// ---- Dante ----
+	setDanteContentOff = 'setDanteContentOff',
+	setDanteContentParticipant = 'setDanteContentParticipant',
+	setDanteContentMix = 'setDanteContentMix',
+	setDanteContentScreenshare = 'setDanteContentScreenshare',
+	setDanteParticipantSelection = 'setDanteParticipantSelection',
+	getDanteChannelConfig = 'getDanteChannelConfig',
+	getDanteChannelCount = 'getDanteChannelCount',
 
-function parseRoomIndex(value: unknown): number {
-	const n = Math.round(Number(value))
-	if (!isFinite(n) || n < 1 || n > 999) {
-		throw new Error(`Invalid room index: "${value}". Must be a number between 1 and 999.`)
-	}
-	return n
-}
+	// ---- Device settings ----
+	setRoomMic = 'setRoomMic',
+	setRoomMainCamera = 'setRoomMainCamera',
+	setRoomMultiCameraOn = 'setRoomMultiCameraOn',
+	setRoomMultiCameraOff = 'setRoomMultiCameraOff',
+	setRoomSpeaker = 'setRoomSpeaker',
+	getRoomMicList = 'getRoomMicList',
+	getRoomCameraList = 'getRoomCameraList',
+	getRoomSpeakerList = 'getRoomSpeakerList',
+	muteMic = 'muteMic',
+	unMuteMic = 'unMuteMic',
+	startCamera = 'startCamera',
+	stopCamera = 'stopCamera',
+	getSelectedPrimaryCamera = 'getSelectedPrimaryCamera',
+	getSelectedMultiCameras = 'getSelectedMultiCameras',
+	getSelectedMic = 'getSelectedMic',
+	getSelectedSpeaker = 'getSelectedSpeaker',
+	setCameraDisplayName = 'setCameraDisplayName',
 
-function buildRoomPath(
-	targetType: TargetType,
-	command: string,
-	roomArg: string | number | undefined,
-): { path: string; args: (string | number)[] } {
-	const base = `/zoomRooms/${targetType}/${command}`
-	const args: (string | number)[] = []
-	if (targetType === 'roomID' || targetType === 'roomName') {
-		if (typeof roomArg === 'string') args.push(roomArg)
-	} else if (targetType === 'roomIndex') {
-		if (typeof roomArg === 'number') args.push(roomArg)
-	}
-	return { path: base, args }
-}
+	// ---- Overlays ----
+	setNameTagAlignment = 'setNameTagAlignment',
+	enableNameTagOverlay = 'enableNameTagOverlay',
+	disableNameTagOverlay = 'disableNameTagOverlay',
+	enableEmojiOverlay = 'enableEmojiOverlay',
+	disableEmojiOverlay = 'disableEmojiOverlay',
+	enableHandRaiseOverlay = 'enableHandRaiseOverlay',
+	disableHandRaiseOverlay = 'disableHandRaiseOverlay',
+	enableActiveSpeakerOverlay = 'enableActiveSpeakerOverlay',
+	disableActiveSpeakerOverlay = 'disableActiveSpeakerOverlay',
+	getOverlaySettings = 'getOverlaySettings',
 
-function getRoomTarget(opt: Record<string, unknown>): { targetType: TargetType; roomArg: string | number | undefined } {
-	const targetType = (opt.targetType as TargetType) || 'roomIndex'
-	const roomArg: string | number | undefined =
-		targetType === 'roomID'
-			? typeof opt.roomID === 'string'
-				? opt.roomID
-				: ''
-			: targetType === 'roomName'
-				? typeof opt.roomName === 'string'
-					? opt.roomName
-					: ''
-				: targetType === 'roomIndex'
-					? parseRoomIndex(opt.roomIndex)
-					: undefined
-	return { targetType, roomArg }
+	// ---- Content share ----
+	startDeviceShare = 'startDeviceShare',
+	startCameraShare = 'startCameraShare',
+	stopShare = 'stopShare',
+
+	// ---- Room / meeting ----
+	getRoomInfo = 'getRoomInfo',
+	getParticipantCount = 'getParticipantCount',
+	getMeetingStatus = 'getMeetingStatus',
+	activateCameraPreset = 'activateCameraPreset',
+	pairRoom = 'pairRoom',
+	unPairRoom = 'unPairRoom',
+	renameParticipant = 'renameParticipant',
+	setActiveSpeakerSelf = 'setActiveSpeakerSelf',
+	setActiveSpeakerChild = 'setActiveSpeakerChild',
+
+	// ---- Companion ----
+	getCompanionRoomList = 'getCompanionRoomList',
+	getCompanionRoomCameraList = 'getCompanionRoomCameraList',
+	setCompanionRoomCameraDisplayName = 'setCompanionRoomCameraDisplayName',
+	setCompanionRoomCameraOff = 'setCompanionRoomCameraOff',
+	setCompanionRoomCameraOn = 'setCompanionRoomCameraOn',
 }
 
 export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefinitions {
@@ -97,457 +120,432 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 		instance.OSC?.sendCommand(path, args)
 	}
 
-	const roomCommand =
-		(command: string, extraArgs: (string | number)[] = []) =>
-		(action: { options: Record<string, unknown> }) => {
-			try {
-				const opt = action.options
-				const { targetType, roomArg } = getRoomTarget(opt)
-				const { path, args } = buildRoomPath(targetType, command, roomArg)
-				send(path, [...args, ...extraArgs])
-			} catch (e) {
-				instance.log('error', `Error for ${command}.  ${e instanceof Error ? e.message : String(e)}`)
-			}
-		}
+	const actionsJoinFlow: { [id in ActionIdJoinFlow]: CompanionActionDefinition | undefined } =
+		GetActionsJoinFlow(instance)
 
-	const roomCommandWithOpts =
-		(command: string, getExtra: (opt: Record<string, unknown>) => (string | number)[]) =>
-		(action: { options: Record<string, unknown> }) => {
-			try {
-				const opt = action.options
-				const { targetType, roomArg } = getRoomTarget(opt)
-				const { path, args } = buildRoomPath(targetType, command, roomArg)
-				send(path, [...args, ...getExtra(opt)])
-			} catch (e) {
-				instance.log('error', `Error for ${command}.  ${e instanceof Error ? e.message : String(e)}`)
-			}
-		}
+	const actions: { [id in ActionId | ActionIdJoinFlow]: CompanionActionDefinition | undefined } = {
+		...actionsJoinFlow,
 
-	return {
-		// ---- Join Flow ----
-		joinMeeting: {
-			name: 'Join meeting',
-			options: [
-				...ROOM_TARGET_OPTIONS,
-				{ type: 'textinput', label: 'Meeting ID', id: 'meetingID', default: '' },
-				{ type: 'textinput', label: 'Meeting password', id: 'meetingPass', default: '' },
-				{ type: 'textinput', label: 'User name', id: 'userName', default: '' },
-			],
-			callback: roomCommandWithOpts('joinMeeting', (o) => [
-				typeof o.meetingID === 'string' ? o.meetingID : '',
-				typeof o.meetingPass === 'string' ? o.meetingPass : '',
-				typeof o.userName === 'string' ? o.userName : '',
-			]),
-		},
-		startMeeting: {
-			name: 'Start meeting',
-			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('startMeeting'),
-		},
-		leaveMeeting: {
-			name: 'Leave meeting',
-			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('leaveMeeting'),
-		},
 		// ---- Global ----
-		getAddedRoomList: {
+		[ActionId.getAddedRoomList]: {
 			name: 'Get added room list',
 			options: [],
 			callback: () => send('/zoomRooms/getAddedRoomList', []),
 		},
-		getPairedRoomList: {
+		[ActionId.getPairedRoomList]: {
 			name: 'Get paired room list',
 			options: [],
 			callback: () => send('/zoomRooms/getPairedRoomList', []),
 		},
-		getAddedRoomCount: {
+		[ActionId.getAddedRoomCount]: {
 			name: 'Get added room count',
 			options: [],
 			callback: () => send('/zoomRooms/getAddedRoomCount', []),
 		},
-		getPairedRoomCount: {
+		[ActionId.getPairedRoomCount]: {
 			name: 'Get paired room count',
 			options: [],
 			callback: () => send('/zoomRooms/getPairedRoomCount', []),
 		},
 
 		// ---- NDI ----
-		setNDIContentOff: {
+		[ActionId.setNDIContentOff]: {
 			name: 'NDI: Set content off',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setNDIContentOff', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setNDIContentOff', (o) => [Number(o.channel_num) || 1]),
 		},
-		setNDIContentParticipant: {
+		[ActionId.setNDIContentParticipant]: {
 			name: 'NDI: Set content to participant',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setNDIContentParticipant', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setNDIContentParticipant', (o) => [Number(o.channel_num) || 1]),
 		},
-		setNDIContentActiveSpeaker: {
+		[ActionId.setNDIContentActiveSpeaker]: {
 			name: 'NDI: Set content to active speaker',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setNDIContentActiveSpeaker', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setNDIContentActiveSpeaker', (o) => [Number(o.channel_num) || 1]),
 		},
-		setNDIContentGallery: {
+		[ActionId.setNDIContentGallery]: {
 			name: 'NDI: Set content to gallery',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setNDIContentGallery', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setNDIContentGallery', (o) => [Number(o.channel_num) || 1]),
 		},
-		setNDIContentScreenshare: {
+		[ActionId.setNDIContentScreenshare]: {
 			name: 'NDI: Set content to screenshare',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setNDIContentScreenshare', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setNDIContentScreenshare', (o) => [Number(o.channel_num) || 1]),
 		},
-		setNDIContentSpotlight: {
+		[ActionId.setNDIContentSpotlight]: {
 			name: 'NDI: Set content to spotlight',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setNDIContentSpotlight', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setNDIContentSpotlight', (o) => [Number(o.channel_num) || 1]),
 		},
-		setNDIContentPinGroup: {
+		[ActionId.setNDIContentPinGroup]: {
 			name: 'NDI: Set content to pin group',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setNDIContentPinGroup', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setNDIContentPinGroup', (o) => [Number(o.channel_num) || 1]),
 		},
-		setNDIParticipantSelection: {
+		[ActionId.setNDIParticipantSelection]: {
 			name: 'NDI: Select participant',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'textinput', label: 'Zoom username', id: 'exact_zoom_username', default: '' },
 			],
-			callback: roomCommandWithOpts('setNDIParticipantSelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setNDIParticipantSelection', (o) => [
 				Number(o.channel_num) || 1,
 				typeof o.exact_zoom_username === 'string' ? o.exact_zoom_username : '',
 			]),
 		},
-		setNDIGallerySelection: {
+		[ActionId.setNDIGallerySelection]: {
 			name: 'NDI: Select gallery',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Gallery index', id: 'gallery_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setNDIGallerySelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setNDIGallerySelection', (o) => [
 				Number(o.channel_num) || 1,
 				Number(o.gallery_index || 0),
 			]),
 		},
-		setNDIScreenshareSelection: {
+		[ActionId.setNDIScreenshareSelection]: {
 			name: 'NDI: Select screenshare',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Screenshare index', id: 'screenshare_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setNDIScreenshareSelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setNDIScreenshareSelection', (o) => [
 				Number(o.channel_num) || 1,
 				Number(o.screenshare_index) || 0,
 			]),
 		},
-		setNDIPinGroupSelection: {
+		[ActionId.setNDIPinGroupSelection]: {
 			name: 'NDI: Select pin group',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Pin group index', id: 'pin_group_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setNDIPinGroupSelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setNDIPinGroupSelection', (o) => [
 				Number(o.channel_num) || 1,
 				Number(o.pin_group_index) || 0,
 			]),
 		},
-		getNDIChannelConfig: {
+		[ActionId.getNDIChannelConfig]: {
 			name: 'NDI: Get channel config',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('getNDIChannelConfig', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'getNDIChannelConfig', (o) => [Number(o.channel_num) || 1]),
 		},
-		getNDIChannelCount: {
+		[ActionId.getNDIChannelCount]: {
 			name: 'NDI: Get channel count',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getNDIChannelCount'),
+			callback: roomCommand(instance, 'getNDIChannelCount'),
 		},
 
 		// ---- HWIO ----
-		setHWIOMode: {
+		[ActionId.setHWIOMode]: {
 			name: 'HWIO: Set mode',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Mode index', id: 'mode_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setHWIOMode', (o) => [Number(o.channel_num) || 1, Number(o.mode_index) || 0]),
+			callback: roomCommandWithOpts(instance, 'setHWIOMode', (o) => [
+				Number(o.channel_num) || 1,
+				Number(o.mode_index) || 0,
+			]),
 		},
-		setHWIOInputSelection: {
+		[ActionId.setHWIOInputSelection]: {
 			name: 'HWIO: Set input selection',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Video index', id: 'video_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setHWIOInputSelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setHWIOInputSelection', (o) => [
 				Number(o.channel_num) || 1,
 				Number(o.video_index) || 0,
 			]),
 		},
-		setHWIOContentOff: {
+		[ActionId.setHWIOContentOff]: {
 			name: 'HWIO: Content off',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setHWIOContentOff', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setHWIOContentOff', (o) => [Number(o.channel_num) || 1]),
 		},
-		setHWIOContentTestSignal: {
+		[ActionId.setHWIOContentTestSignal]: {
 			name: 'HWIO: Content test signal',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setHWIOContentTestSignal', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setHWIOContentTestSignal', (o) => [Number(o.channel_num) || 1]),
 		},
-		setHWIOContentParticipant: {
+		[ActionId.setHWIOContentParticipant]: {
 			name: 'HWIO: Content participant',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setHWIOContentParticipant', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setHWIOContentParticipant', (o) => [Number(o.channel_num) || 1]),
 		},
-		setHWIOContentActiveSpeaker: {
+		[ActionId.setHWIOContentActiveSpeaker]: {
 			name: 'HWIO: Content active speaker',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setHWIOContentActiveSpeaker', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setHWIOContentActiveSpeaker', (o) => [Number(o.channel_num) || 1]),
 		},
-		setHWIOContentGallery: {
+		[ActionId.setHWIOContentGallery]: {
 			name: 'HWIO: Content gallery',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setHWIOContentGallery', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setHWIOContentGallery', (o) => [Number(o.channel_num) || 1]),
 		},
-		setHWIOContentScreenshare: {
+		[ActionId.setHWIOContentScreenshare]: {
 			name: 'HWIO: Content screenshare',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setHWIOContentScreenshare', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setHWIOContentScreenshare', (o) => [Number(o.channel_num) || 1]),
 		},
-		setHWIOContentSpotlight: {
+		[ActionId.setHWIOContentSpotlight]: {
 			name: 'HWIO: Content spotlight',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setHWIOContentSpotlight', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setHWIOContentSpotlight', (o) => [Number(o.channel_num) || 1]),
 		},
-		setHWIOContentPinGroup: {
+		[ActionId.setHWIOContentPinGroup]: {
 			name: 'HWIO: Content pin group',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setHWIOContentPinGroup', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setHWIOContentPinGroup', (o) => [Number(o.channel_num) || 1]),
 		},
-		setHWIOResolutionFrameRate: {
+		[ActionId.setHWIOResolutionFrameRate]: {
 			name: 'HWIO: Set resolution/framerate',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'textinput', label: 'Resolution/framerate', id: 'resolution_framerate', default: '' },
 			],
-			callback: roomCommandWithOpts('setHWIOResolutionFrameRate', (o) => [
+			callback: roomCommandWithOpts(instance, 'setHWIOResolutionFrameRate', (o) => [
 				Number(o.channel_num) || 1,
 				typeof o.resolution_framerate === 'string' ? o.resolution_framerate : '',
 			]),
 		},
-		setHWIOAudioMix: {
+		[ActionId.setHWIOAudioMix]: {
 			name: 'HWIO: Set audio mix',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Setting index', id: 'setting_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setHWIOAudioMix', (o) => [
+			callback: roomCommandWithOpts(instance, 'setHWIOAudioMix', (o) => [
 				Number(o.channel_num) || 1,
 				Number(o.setting_index) || 0,
 			]),
 		},
-		setHWIOParticipantSelection: {
+		[ActionId.setHWIOParticipantSelection]: {
 			name: 'HWIO: Select participant',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'textinput', label: 'Zoom username', id: 'zoom_username', default: '' },
 			],
-			callback: roomCommandWithOpts('setHWIOParticipantSelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setHWIOParticipantSelection', (o) => [
 				Number(o.channel_num) || 1,
 				typeof o.zoom_username === 'string' ? o.zoom_username : '',
 			]),
 		},
-		setHWIOGallerySelection: {
+		[ActionId.setHWIOGallerySelection]: {
 			name: 'HWIO: Select gallery',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Gallery index', id: 'gallery_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setHWIOGallerySelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setHWIOGallerySelection', (o) => [
 				Number(o.channel_num) || 1,
 				Number(o.gallery_index) || 0,
 			]),
 		},
-		setHWIOScreenshareSelection: {
+		[ActionId.setHWIOScreenshareSelection]: {
 			name: 'HWIO: Select screenshare',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Screenshare index', id: 'screenshare_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setHWIOScreenshareSelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setHWIOScreenshareSelection', (o) => [
 				Number(o.channel_num) || 1,
 				Number(o.screenshare_index) || 0,
 			]),
 		},
-		setHWIOPinGroupSelection: {
+		[ActionId.setHWIOPinGroupSelection]: {
 			name: 'HWIO: Select pin group',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'number', label: 'Pin group index', id: 'pin_group_index', default: 0, min: 0, max: 99 },
 			],
-			callback: roomCommandWithOpts('setHWIOPinGroupSelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setHWIOPinGroupSelection', (o) => [
 				Number(o.channel_num) || 1,
 				Number(o.pin_group_index) || 0,
 			]),
 		},
-		getHWIOChannelConfig: {
+		[ActionId.getHWIOChannelConfig]: {
 			name: 'HWIO: Get channel config',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('getHWIOChannelConfig', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'getHWIOChannelConfig', (o) => [Number(o.channel_num) || 1]),
 		},
-		getHWIOChannelCount: {
+		[ActionId.getHWIOChannelCount]: {
 			name: 'HWIO: Get channel count',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getHWIOChannelCount'),
+			callback: roomCommand(instance, 'getHWIOChannelCount'),
 		},
-		getHWIOSupportedResolutionFrameRate: {
+		[ActionId.getHWIOSupportedResolutionFrameRate]: {
 			name: 'HWIO: Get supported resolution/framerate',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('getHWIOSupportedResolutionFrameRate', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'getHWIOSupportedResolutionFrameRate', (o) => [
+				Number(o.channel_num) || 1,
+			]),
 		},
 
 		// ---- Dante ----
-		setDanteContentOff: {
+		[ActionId.setDanteContentOff]: {
 			name: 'Dante: Content off',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setDanteContentOff', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setDanteContentOff', (o) => [Number(o.channel_num) || 1]),
 		},
-		setDanteContentParticipant: {
+		[ActionId.setDanteContentParticipant]: {
 			name: 'Dante: Content participant',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setDanteContentParticipant', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setDanteContentParticipant', (o) => [Number(o.channel_num) || 1]),
 		},
-		setDanteContentMix: {
+		[ActionId.setDanteContentMix]: {
 			name: 'Dante: Content mixed audio',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setDanteContentMix', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setDanteContentMix', (o) => [Number(o.channel_num) || 1]),
 		},
-		setDanteContentScreenshare: {
+		[ActionId.setDanteContentScreenshare]: {
 			name: 'Dante: Content screenshare',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('setDanteContentScreenshare', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'setDanteContentScreenshare', (o) => [Number(o.channel_num) || 1]),
 		},
-		setDanteParticipantSelection: {
+		[ActionId.setDanteParticipantSelection]: {
 			name: 'Dante: Select participant',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				CHANNEL_NUM_OPTION,
 				{ type: 'textinput', label: 'Zoom username', id: 'zoom_username', default: '' },
 			],
-			callback: roomCommandWithOpts('setDanteParticipantSelection', (o) => [
+			callback: roomCommandWithOpts(instance, 'setDanteParticipantSelection', (o) => [
 				Number(o.channel_num) || 1,
 				typeof o.zoom_username === 'string' ? o.zoom_username : '',
 			]),
 		},
-		getDanteChannelConfig: {
+		[ActionId.getDanteChannelConfig]: {
 			name: 'Dante: Get channel config',
 			options: [...ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION],
-			callback: roomCommandWithOpts('getDanteChannelConfig', (o) => [Number(o.channel_num) || 1]),
+			callback: roomCommandWithOpts(instance, 'getDanteChannelConfig', (o) => [Number(o.channel_num) || 1]),
 		},
-		getDanteChannelCount: {
+		[ActionId.getDanteChannelCount]: {
 			name: 'Dante: Get channel count',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getDanteChannelCount'),
+			callback: roomCommand(instance, 'getDanteChannelCount'),
 		},
 
 		// ---- Device settings ----
-		setRoomMic: {
+		[ActionId.setRoomMic]: {
 			name: 'Set room mic',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Mic name', id: 'mic_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomMic', (o) => [typeof o.mic_name === 'string' ? o.mic_name : '']),
+			callback: roomCommandWithOpts(instance, 'setRoomMic', (o) => [typeof o.mic_name === 'string' ? o.mic_name : '']),
 		},
-		setRoomMainCamera: {
+		[ActionId.setRoomMainCamera]: {
 			name: 'Set main camera',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomMainCamera', (o) => [
+			callback: roomCommandWithOpts(instance, 'setRoomMainCamera', (o) => [
 				typeof o.camera_name === 'string' ? o.camera_name : '',
 			]),
 		},
-		setRoomMultiCameraOn: {
+		[ActionId.setRoomMultiCameraOn]: {
 			name: 'Set multi-camera on',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomMultiCameraOn', (o) => [
+			callback: roomCommandWithOpts(instance, 'setRoomMultiCameraOn', (o) => [
 				typeof o.camera_name === 'string' ? o.camera_name : '',
 			]),
 		},
-		setRoomMultiCameraOff: {
+		[ActionId.setRoomMultiCameraOff]: {
 			name: 'Set multi-camera off',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomMultiCameraOff', (o) => [
+			callback: roomCommandWithOpts(instance, 'setRoomMultiCameraOff', (o) => [
 				typeof o.camera_name === 'string' ? o.camera_name : '',
 			]),
 		},
-		setRoomSpeaker: {
+		[ActionId.setRoomSpeaker]: {
 			name: 'Set room speaker',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Speaker name', id: 'speaker_name', default: '' }],
-			callback: roomCommandWithOpts('setRoomSpeaker', (o) => [
+			callback: roomCommandWithOpts(instance, 'setRoomSpeaker', (o) => [
 				typeof o.speaker_name === 'string' ? o.speaker_name : '',
 			]),
 		},
-		getRoomMicList: {
+		[ActionId.getRoomMicList]: {
 			name: 'Get room mic list',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getRoomMicList'),
+			callback: roomCommand(instance, 'getRoomMicList'),
 		},
-		getRoomCameraList: {
+		[ActionId.getRoomCameraList]: {
 			name: 'Get room camera list',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getRoomCameraList'),
+			callback: roomCommand(instance, 'getRoomCameraList'),
 		},
-		getRoomSpeakerList: {
+		[ActionId.getRoomSpeakerList]: {
 			name: 'Get room speaker list',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getRoomSpeakerList'),
+			callback: roomCommand(instance, 'getRoomSpeakerList'),
 		},
-		muteMic: { name: 'Mute mic', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('muteMic') },
-		unMuteMic: { name: 'Unmute mic', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('unMuteMic') },
-		startCamera: { name: 'Start camera', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('startCamera') },
-		stopCamera: { name: 'Stop camera', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('stopCamera') },
-		getSelectedPrimaryCamera: {
+		[ActionId.muteMic]: {
+			name: 'Mute mic',
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand(instance, 'muteMic'),
+		},
+		[ActionId.unMuteMic]: {
+			name: 'Unmute mic',
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand(instance, 'unMuteMic'),
+		},
+		[ActionId.startCamera]: {
+			name: 'Start camera',
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand(instance, 'startCamera'),
+		},
+		[ActionId.stopCamera]: {
+			name: 'Stop camera',
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand(instance, 'stopCamera'),
+		},
+		[ActionId.getSelectedPrimaryCamera]: {
 			name: 'Get selected primary camera',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getSelectedPrimaryCamera'),
+			callback: roomCommand(instance, 'getSelectedPrimaryCamera'),
 		},
-		getSelectedMultiCameras: {
+		[ActionId.getSelectedMultiCameras]: {
 			name: 'Get selected multi cameras',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getSelectedMultiCameras'),
+			callback: roomCommand(instance, 'getSelectedMultiCameras'),
 		},
-		getSelectedMic: {
+		[ActionId.getSelectedMic]: {
 			name: 'Get selected mic',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getSelectedMic'),
+			callback: roomCommand(instance, 'getSelectedMic'),
 		},
-		getSelectedSpeaker: {
+		[ActionId.getSelectedSpeaker]: {
 			name: 'Get selected speaker',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getSelectedSpeaker'),
+			callback: roomCommand(instance, 'getSelectedSpeaker'),
 		},
-		setCameraDisplayName: {
+		[ActionId.setCameraDisplayName]: {
 			name: 'Set camera display name',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'textinput', label: 'Camera device name', id: 'camera_device_name', default: '' },
 				{ type: 'textinput', label: 'New display name', id: 'new_camera_display_name', default: '' },
 			],
-			callback: roomCommandWithOpts('setCameraDisplayName', (o) => [
+			callback: roomCommandWithOpts(instance, 'setCameraDisplayName', (o) => [
 				typeof o.camera_device_name === 'string' ? o.camera_device_name : '',
 				typeof o.new_camera_display_name === 'string' ? o.new_camera_display_name : '',
 			]),
 		},
 
 		// ---- Overlays ----
-		setNameTagAlignment: {
+		[ActionId.setNameTagAlignment]: {
 			name: 'Set name tag alignment',
 			options: [
 				...ROOM_TARGET_OPTIONS,
@@ -560,134 +558,152 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 					max: 3,
 				},
 			],
-			callback: roomCommandWithOpts('setNameTagAlignment', (o) => [Number(o.location_index) || 2]),
+			callback: roomCommandWithOpts(instance, 'setNameTagAlignment', (o) => [Number(o.location_index) || 2]),
 		},
-		enableNameTagOverlay: {
+		[ActionId.enableNameTagOverlay]: {
 			name: 'Enable name tag overlay',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('enableNameTagOverlay'),
+			callback: roomCommand(instance, 'enableNameTagOverlay'),
 		},
-		disableNameTagOverlay: {
+		[ActionId.disableNameTagOverlay]: {
 			name: 'Disable name tag overlay',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('disableNameTagOverlay'),
+			callback: roomCommand(instance, 'disableNameTagOverlay'),
 		},
-		enableEmojiOverlay: {
+		[ActionId.enableEmojiOverlay]: {
 			name: 'Enable emoji overlay',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('enableEmojiOverlay'),
+			callback: roomCommand(instance, 'enableEmojiOverlay'),
 		},
-		disableEmojiOverlay: {
+		[ActionId.disableEmojiOverlay]: {
 			name: 'Disable emoji overlay',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('disableEmojiOverlay'),
+			callback: roomCommand(instance, 'disableEmojiOverlay'),
 		},
-		enableHandRaiseOverlay: {
+		[ActionId.enableHandRaiseOverlay]: {
 			name: 'Enable hand raise overlay',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('enableHandRaiseOverlay'),
+			callback: roomCommand(instance, 'enableHandRaiseOverlay'),
 		},
-		disableHandRaiseOverlay: {
+		[ActionId.disableHandRaiseOverlay]: {
 			name: 'Disable hand raise overlay',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('disableHandRaiseOverlay'),
+			callback: roomCommand(instance, 'disableHandRaiseOverlay'),
 		},
-		enableActiveSpeakerOverlay: {
+		[ActionId.enableActiveSpeakerOverlay]: {
 			name: 'Enable active speaker overlay',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('enableActiveSpeakerOverlay'),
+			callback: roomCommand(instance, 'enableActiveSpeakerOverlay'),
 		},
-		disableActiveSpeakerOverlay: {
+		[ActionId.disableActiveSpeakerOverlay]: {
 			name: 'Disable active speaker overlay',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('disableActiveSpeakerOverlay'),
+			callback: roomCommand(instance, 'disableActiveSpeakerOverlay'),
 		},
-		getOverlaySettings: {
+		[ActionId.getOverlaySettings]: {
 			name: 'Get overlay settings',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getOverlaySettings'),
+			callback: roomCommand(instance, 'getOverlaySettings'),
 		},
 
 		// ---- Content share ----
-		startDeviceShare: {
+		[ActionId.startDeviceShare]: {
 			name: 'Start device share',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('startDeviceShare'),
+			callback: roomCommand(instance, 'startDeviceShare'),
 		},
-		startCameraShare: {
+		[ActionId.startCameraShare]: {
 			name: 'Start camera share',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' }],
-			callback: roomCommandWithOpts('startCameraShare', (o) => [
+			callback: roomCommandWithOpts(instance, 'startCameraShare', (o) => [
 				typeof o.camera_name === 'string' ? o.camera_name : '',
 			]),
 		},
-		stopShare: { name: 'Stop share', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('stopShare') },
+		[ActionId.stopShare]: {
+			name: 'Stop share',
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand(instance, 'stopShare'),
+		},
 
 		// ---- Room / meeting ----
-		getRoomInfo: { name: 'Get room info', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('getRoomInfo') },
-		getParticipantCount: {
+		[ActionId.getRoomInfo]: {
+			name: 'Get room info',
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand(instance, 'getRoomInfo'),
+		},
+		[ActionId.getParticipantCount]: {
 			name: 'Get participant count',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getParticipantCount'),
+			callback: roomCommand(instance, 'getParticipantCount'),
 		},
-		getMeetingStatus: {
+		[ActionId.getMeetingStatus]: {
 			name: 'Get meeting status',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getMeetingStatus'),
+			callback: roomCommand(instance, 'getMeetingStatus'),
 		},
-		activateCameraPreset: {
+		[ActionId.activateCameraPreset]: {
 			name: 'Activate camera preset',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'number', label: 'Preset index', id: 'preset_index', default: 1, min: 1, max: 99 },
 			],
-			callback: roomCommandWithOpts('activateCameraPreset', (o) => [Number(o.preset_index) || 1]),
+			callback: roomCommandWithOpts(instance, 'activateCameraPreset', (o) => [Number(o.preset_index) || 1]),
 		},
-		pairRoom: { name: 'Pair room', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('pairRoom') },
-		unPairRoom: { name: 'Unpair room', options: [...ROOM_TARGET_OPTIONS], callback: roomCommand('unPairRoom') },
-		renameParticipant: {
+		[ActionId.pairRoom]: {
+			name: 'Pair room',
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand(instance, 'pairRoom'),
+		},
+		[ActionId.unPairRoom]: {
+			name: 'Unpair room',
+			options: [...ROOM_TARGET_OPTIONS],
+			callback: roomCommand(instance, 'unPairRoom'),
+		},
+		[ActionId.renameParticipant]: {
 			name: 'Rename participant',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'textinput', label: 'Current name', id: 'current_name', default: '' },
 				{ type: 'textinput', label: 'New name', id: 'new_name', default: '' },
 			],
-			callback: roomCommandWithOpts('renameParticipant', (o) => [
+			callback: roomCommandWithOpts(instance, 'renameParticipant', (o) => [
 				typeof o.current_name === 'string' ? o.current_name : '',
 				typeof o.new_name === 'string' ? o.new_name : '',
 			]),
 		},
-		setActiveSpeakerSelf: {
+		[ActionId.setActiveSpeakerSelf]: {
 			name: 'Set active speaker (self)',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('setActiveSpeakerSelf'),
+			callback: roomCommand(instance, 'setActiveSpeakerSelf'),
 		},
-		setActiveSpeakerChild: {
+		[ActionId.setActiveSpeakerChild]: {
 			name: 'Set active speaker (participant)',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'textinput', label: 'Participant name', id: 'participant_name', default: '' },
 			],
-			callback: roomCommandWithOpts('setActiveSpeakerChild', (o) => [
+			callback: roomCommandWithOpts(instance, 'setActiveSpeakerChild', (o) => [
 				typeof o.participant_name === 'string' ? o.participant_name : '',
 			]),
 		},
-		getCompanionRoomList: {
+
+		// ---- Companion ----
+		[ActionId.getCompanionRoomList]: {
 			name: 'Get companion room list',
 			options: [...ROOM_TARGET_OPTIONS],
-			callback: roomCommand('getCompanionRoomList'),
+			callback: roomCommand(instance, 'getCompanionRoomList'),
 		},
-		getCompanionRoomCameraList: {
+		[ActionId.getCompanionRoomCameraList]: {
 			name: 'Get companion room camera list',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'textinput', label: 'Companion room ID (czr_id)', id: 'czr_id', default: '' },
 			],
-			callback: roomCommandWithOpts('getCompanionRoomCameraList', (o) => [
+			callback: roomCommandWithOpts(instance, 'getCompanionRoomCameraList', (o) => [
 				typeof o.czr_id === 'string' ? o.czr_id : '',
 			]),
 		},
-		setCompanionRoomCameraDisplayName: {
+		[ActionId.setCompanionRoomCameraDisplayName]: {
 			name: 'Set companion room camera display name',
 			options: [
 				...ROOM_TARGET_OPTIONS,
@@ -695,35 +711,36 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 				{ type: 'textinput', label: 'Camera device name', id: 'camera_device_name', default: '' },
 				{ type: 'textinput', label: 'New display name', id: 'new_camera_display_name', default: '' },
 			],
-			callback: roomCommandWithOpts('setCompanionRoomCameraDisplayName', (o) => [
+			callback: roomCommandWithOpts(instance, 'setCompanionRoomCameraDisplayName', (o) => [
 				typeof o.czr_id === 'string' ? o.czr_id : '',
 				typeof o.camera_device_name === 'string' ? o.camera_device_name : '',
 				typeof o.new_camera_display_name === 'string' ? o.new_camera_display_name : '',
 			]),
 		},
-		setCompanionRoomCameraOff: {
+		[ActionId.setCompanionRoomCameraOff]: {
 			name: 'Set companion room camera off',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'textinput', label: 'Companion room ID', id: 'czr_id', default: '' },
 				{ type: 'textinput', label: 'Camera device name', id: 'camera_device_name', default: '' },
 			],
-			callback: roomCommandWithOpts('setCompanionRoomCameraOff', (o) => [
+			callback: roomCommandWithOpts(instance, 'setCompanionRoomCameraOff', (o) => [
 				typeof o.czr_id === 'string' ? o.czr_id : '',
 				typeof o.camera_device_name === 'string' ? o.camera_device_name : '',
 			]),
 		},
-		setCompanionRoomCameraOn: {
+		[ActionId.setCompanionRoomCameraOn]: {
 			name: 'Set companion room camera on',
 			options: [
 				...ROOM_TARGET_OPTIONS,
 				{ type: 'textinput', label: 'Companion room ID', id: 'czr_id', default: '' },
 				{ type: 'textinput', label: 'Camera device name', id: 'camera_device_name', default: '' },
 			],
-			callback: roomCommandWithOpts('setCompanionRoomCameraOn', (o) => [
+			callback: roomCommandWithOpts(instance, 'setCompanionRoomCameraOn', (o) => [
 				typeof o.czr_id === 'string' ? o.czr_id : '',
 				typeof o.camera_device_name === 'string' ? o.camera_device_name : '',
 			]),
 		},
 	}
+	return actions
 }
