@@ -13,7 +13,7 @@ Bitfocus Companion module for **Custom AV for Zoom Rooms Controller (CAVZRC)**. 
 Add a connection in Companion: **Connections** → **Add connection** → **Zoom** → **CAVZRC Companion module** (or **CAVZRC**). Then set:
 
 | Field | Meaning |
-|-------|--------|
+| ------- | -------- |
 | **CAVZRC host (IP)** | IP of the machine running CAVZRC (use `127.0.0.1` if Companion and CAVZRC are on the same machine). |
 | **CAVZRC Receiving Port** | Must match CAVZRC’s **Receiving Port** (Companion sends commands here). |
 | **Companion listen port** | Must match CAVZRC’s **Transmission Port** (CAVZRC sends status/feedback here). Use **0** to disable feedback and variables. |

@@ -1,3 +1,6 @@
 package.json
 /LICENSE.md
-.squad
+.squad/**
+.copilot/**
+.github/**
+README.md
