@@ -9,7 +9,7 @@ import {
 	updateAddedRoomsList,
 	updatePairedRoomsList,
 } from './variables/variable-values.js'
-import { FeedbackId } from './feedback.js'
+import { FeedbackIdRoomStatus } from './feedbacks/feedback-room-status.js'
 
 export class OSC {
 	private readonly instance: ZoomRoomsInstance
@@ -172,7 +172,7 @@ export class OSC {
 				updatePairedRoomsList(this.instance, variables)
 				updatePairedRoomsCount(this.instance, variables)
 				this.instance.setVariableValues(variables)
-				this.instance.checkFeedbacks(FeedbackId.RoomPaired)
+				this.instance.checkFeedbacks(FeedbackIdRoomStatus.RoomPaired)
 			}
 			return
 		}
@@ -193,7 +193,7 @@ export class OSC {
 			if (path === 'meetingStatus') {
 				room.meetingStatus = this.argStr(args, 3)
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks(FeedbackId.InMeeting)
+				this.instance.checkFeedbacks(FeedbackIdRoomStatus.InMeeting)
 			} else if (path === 'participantCount') {
 				room.participantCount = this.argInt(args, 3)
 				this.instance.updateVariableValues()
@@ -201,12 +201,12 @@ export class OSC {
 				const v = args[3]
 				room.muteStatus = v?.type === 'i' ? (v as { value: number }).value === 1 : (v as { value: boolean })?.value
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks(FeedbackId.MuteStatus)
+				this.instance.checkFeedbacks(FeedbackIdRoomStatus.MuteStatus)
 			} else if (path === 'cameraStatus') {
 				const v = args[3]
 				room.cameraStatus = v?.type === 'i' ? (v as { value: number }).value === 1 : (v as { value: boolean })?.value
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks(FeedbackId.CameraStatus)
+				this.instance.checkFeedbacks(FeedbackIdRoomStatus.CameraStatus)
 			} else if (path === 'selectedPrimaryCamera') {
 				room.selectedPrimaryCamera = this.argStr(args, 3)
 				this.instance.updateVariableValues()
