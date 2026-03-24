@@ -1,5 +1,5 @@
 import type { CompanionActionDefinition } from '@companion-module/base'
-import type { ZoomRoomsInstance } from '../types.js'
+import type { ZoomRoomsInstance } from '../utils.js'
 import { ROOM_TARGET_OPTIONS, CHANNEL_NUM_OPTION, roomCommand, roomCommandWithOpts } from './action-room-utils.js'
 
 export enum ActionIdDante {

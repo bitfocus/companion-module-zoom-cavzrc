@@ -1,5 +1,5 @@
 import type { CompanionPresetDefinitions } from '@companion-module/base'
-import type { ZoomRoomsInstance } from './types.js'
+import type { ZoomRoomsInstance } from './utils.js'
 import { CompanionPresetExt } from './presets/preset-utils.js'
 import { PresetIdJoinFlow, GetPresetsJoinFlow } from './presets/preset-join-flow.js'
 import { PresetIdGlobal, GetPresetsGlobal } from './presets/preset-global.js'

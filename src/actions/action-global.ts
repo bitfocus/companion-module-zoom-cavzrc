@@ -1,5 +1,5 @@
 import type { CompanionActionDefinition } from '@companion-module/base'
-import type { ZoomRoomsInstance } from '../types.js'
+import type { ZoomRoomsInstance } from '../utils.js'
 
 export enum ActionIdGlobal {
 	getAddedRoomList = 'getAddedRoomList',

@@ -1,5 +1,5 @@
 import type { CompanionVariableDefinition } from '@companion-module/base'
-import type { ZoomRoomsInstance } from '../types.js'
+import type { ZoomRoomsInstance } from '../utils.js'
 
 export function initVariableDefinitions(instance: ZoomRoomsInstance): void {
 	const definitions: CompanionVariableDefinition[] = [

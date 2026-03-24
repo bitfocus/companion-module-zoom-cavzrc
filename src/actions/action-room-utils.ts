@@ -1,5 +1,5 @@
 import type { SomeCompanionActionInputField } from '@companion-module/base'
-import type { ZoomRoomsInstance } from '../types.js'
+import type { ZoomRoomsInstance } from '../utils.js'
 import type { TargetType } from '../utils.js'
 
 export const ROOM_TARGET_OPTIONS: SomeCompanionActionInputField[] = [

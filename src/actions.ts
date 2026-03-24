@@ -1,5 +1,5 @@
 import type { CompanionActionDefinitions, CompanionActionDefinition } from '@companion-module/base'
-import type { ZoomRoomsInstance } from './types.js'
+import type { ZoomRoomsInstance } from './utils.js'
 import { ActionIdJoinFlow, GetActionsJoinFlow } from './actions/action-join-flow.js'
 import { ActionIdNDI, GetActionsNDI } from './actions/action-ndi.js'
 import { ActionIdHWIO, GetActionsHWIO } from './actions/action-hwio.js'

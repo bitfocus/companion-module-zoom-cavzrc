@@ -1,7 +1,7 @@
 import { UDPPort } from 'osc'
 import { OSC } from '../src/osc.js'
 import { createMockInstance } from './helpers/mock-instance.js'
-import type { ZoomRoomsInstance } from '../src/types.js'
+import type { ZoomRoomsInstance } from '../src/utils.js'
 
 type MockPort = { send: jest.Mock; on: jest.Mock; open: jest.Mock; close: jest.Mock }
 

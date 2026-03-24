@@ -2,7 +2,7 @@ import { InstanceStatus } from '@companion-module/base'
 import type { CompanionVariableValues } from '@companion-module/base'
 import { UDPPort } from 'osc'
 import type { OscArgument } from 'osc'
-import type { ZoomRoomsInstance } from './types.js'
+import type { ZoomRoomsInstance } from './utils.js'
 import {
 	updateAddedRoomsCount,
 	updatePairedRoomsCount,

@@ -1,4 +1,4 @@
-import type { ZoomRoomsInstance } from '../../src/types.js'
+import type { ZoomRoomsInstance } from '../../src/utils.js'
 
 export function createMockInstance(): { instance: ZoomRoomsInstance; mockSendCommand: jest.Mock } {
 	const mockSendCommand = jest.fn()

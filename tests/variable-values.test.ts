@@ -5,7 +5,7 @@ import {
 	updateAddedRoomsList,
 	updatePairedRoomsList,
 } from '../src/variables/variable-values.js'
-import type { ZoomRoomsInstance } from '../src/types.js'
+import type { ZoomRoomsInstance } from '../src/utils.js'
 
 function makeMockInstance(stateOverrides: Partial<ZoomRoomsInstance['state']> = {}): {
 	instance: ZoomRoomsInstance

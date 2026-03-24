@@ -1,5 +1,5 @@
 import type { CompanionVariableValues } from '@companion-module/base'
-import type { ZoomRoomsInstance } from '../types.js'
+import type { ZoomRoomsInstance } from '../utils.js'
 
 export function updateAddedRoomsCount(instance: ZoomRoomsInstance, variables: CompanionVariableValues): void {
 	variables['added_rooms_count'] = instance.state.addedRoomsCount

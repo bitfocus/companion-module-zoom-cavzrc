@@ -1,5 +1,5 @@
 import type { CompanionFeedbackDefinition } from '@companion-module/base'
-import type { ZoomRoomsInstance } from '../types.js'
+import type { ZoomRoomsInstance } from '../utils.js'
 import { getRoomOption } from './feedback-utils.js'
 
 export enum FeedbackIdRoomStatus {
