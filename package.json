@@ -1,6 +1,6 @@
 {
   "name": "companion-module-zoom-rooms",
-  "version": "0.0.3",
+  "version": "0.5.0",
   "main": "dist/index.js",
   "scripts": {
     "postinstall": "husky",
