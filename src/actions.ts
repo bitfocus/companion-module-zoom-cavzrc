@@ -34,12 +34,11 @@ const ROOM_TARGET_OPTIONS: SomeCompanionActionInputField[] = [
 		isVisible: (o) => o.targetType === 'roomName',
 	},
 	{
-		type: 'number',
+		type: 'textinput',
 		label: 'Room index (1-based)',
 		id: 'roomIndex',
-		default: 1,
-		min: 1,
-		max: 999,
+		default: '1',
+		useVariables: true,
 		isVisible: (o) => o.targetType === 'roomIndex',
 	},
 ]
@@ -51,6 +50,14 @@ const CHANNEL_NUM_OPTION: SomeCompanionActionInputField = {
 	default: 1,
 	min: 1,
 	max: 64,
+}
+
+function parseRoomIndex(value: unknown): number {
+	const n = Math.round(Number(value))
+	if (!isFinite(n) || n < 1 || n > 999) {
+		throw new Error(`Invalid room index: "${value}". Must be a number between 1 and 999.`)
+	}
+	return n
 }
 
 function buildRoomPath(
@@ -80,7 +87,7 @@ function getRoomTarget(opt: Record<string, unknown>): { targetType: TargetType; 
 					? opt.roomName
 					: ''
 				: targetType === 'roomIndex'
-					? Number(opt.roomIndex) || 1
+					? parseRoomIndex(opt.roomIndex)
 					: undefined
 	return { targetType, roomArg }
 }
@@ -93,19 +100,27 @@ export function GetActions(instance: ZoomRoomsInstance): CompanionActionDefiniti
 	const roomCommand =
 		(command: string, extraArgs: (string | number)[] = []) =>
 		(action: { options: Record<string, unknown> }) => {
-			const opt = action.options
-			const { targetType, roomArg } = getRoomTarget(opt)
-			const { path, args } = buildRoomPath(targetType, command, roomArg)
-			send(path, [...args, ...extraArgs])
+			try {
+				const opt = action.options
+				const { targetType, roomArg } = getRoomTarget(opt)
+				const { path, args } = buildRoomPath(targetType, command, roomArg)
+				send(path, [...args, ...extraArgs])
+			} catch (e) {
+				instance.log('error', `Error for ${command}.  ${e instanceof Error ? e.message : String(e)}`)
+			}
 		}
 
 	const roomCommandWithOpts =
 		(command: string, getExtra: (opt: Record<string, unknown>) => (string | number)[]) =>
 		(action: { options: Record<string, unknown> }) => {
-			const opt = action.options
-			const { targetType, roomArg } = getRoomTarget(opt)
-			const { path, args } = buildRoomPath(targetType, command, roomArg)
-			send(path, [...args, ...getExtra(opt)])
+			try {
+				const opt = action.options
+				const { targetType, roomArg } = getRoomTarget(opt)
+				const { path, args } = buildRoomPath(targetType, command, roomArg)
+				send(path, [...args, ...getExtra(opt)])
+			} catch (e) {
+				instance.log('error', `Error for ${command}.  ${e instanceof Error ? e.message : String(e)}`)
+			}
 		}
 
 	return {
