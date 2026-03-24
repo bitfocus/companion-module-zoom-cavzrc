@@ -8,3 +8,13 @@
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+### 2026-03-13: OSC poll timer — command address assertion pattern
+
+All 5 poll-timer tests now assert the exact commands sent, not just the call count. After extracting addresses via `port.send.mock.calls.map((c) => (c[0] as { address: string }).address)`, each test uses `toEqual(['/zoomRooms/getAddedRoomList', '/zoomRooms/getPairedRoomList'])` to verify exact order and completeness. The first test also retains a `toHaveBeenCalledTimes(2)` guard before the address check.
+
+### 2026-03-13: OSC poll timer — 2-command-per-tick change + immediate sends
+
+The OSC ready handler fires **2 immediate sends** on connect (`getAddedRoomList` + `getPairedRoomList`) before the interval starts. Two commands (`getAddedRoomCount`, `getPairedRoomCount`) were commented out, reducing interval sends from 4 to 2 per tick.
+
+Critically: the mock config in `createPollingOSCInstance` does NOT include `pollInterval`, so the `if (this.instance.config.pollInterval && ...)` guard prevents the interval from running in tests. Only the 2 immediate sends fire. All 4 poll-timer test assertions were updated to reflect 2 sends total (not 4, 6, or 12).

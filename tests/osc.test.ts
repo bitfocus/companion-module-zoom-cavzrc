@@ -70,37 +70,49 @@ describe('OSC poll timer', () => {
 	it('sends getAddedRoomList after the first 1000ms tick', () => {
 		const { port } = createPollingOSCInstance()
 		jest.advanceTimersByTime(1000)
+		expect(port.send).toHaveBeenCalledTimes(2)
 		const addresses = port.send.mock.calls.map((c: unknown[]) => (c[0] as { address: string }).address)
-		expect(addresses).toContain('/zoomRooms/getAddedRoomList')
+		expect(addresses).toEqual(['/zoomRooms/getAddedRoomList', '/zoomRooms/getPairedRoomList'])
 	})
 
-	it('sends 4 commands per tick (12 sends after 3 ticks)', () => {
+	it('sends 2 commands immediately on connect (2 sends total even after 3 ticks without pollInterval)', () => {
 		const { port } = createPollingOSCInstance()
 		jest.advanceTimersByTime(3000)
-		expect(port.send).toHaveBeenCalledTimes(12)
+		expect(port.send).toHaveBeenCalledTimes(2)
+		const addresses = port.send.mock.calls.map((c: unknown[]) => (c[0] as { address: string }).address)
+		expect(addresses).toEqual(['/zoomRooms/getAddedRoomList', '/zoomRooms/getPairedRoomList'])
 	})
 
-	it('does not send before the first tick', () => {
+	it('sends 2 commands immediately on ready before any interval tick', () => {
 		const { port } = createPollingOSCInstance()
 		jest.advanceTimersByTime(999)
-		expect(port.send).not.toHaveBeenCalled()
+		// 2 immediate sends fire on 'ready' before any interval tick
+		expect(port.send).toHaveBeenCalledTimes(2)
+		const addresses = port.send.mock.calls.map((c: unknown[]) => (c[0] as { address: string }).address)
+		expect(addresses).toEqual(['/zoomRooms/getAddedRoomList', '/zoomRooms/getPairedRoomList'])
 	})
 
 	it('stops polling after destroy()', () => {
 		const { osc, port } = createPollingOSCInstance()
 		jest.advanceTimersByTime(1000)
-		expect(port.send).toHaveBeenCalledTimes(4)
+		// 2 immediate sends on ready; no interval fires (pollInterval not set in mock config)
+		expect(port.send).toHaveBeenCalledTimes(2)
+		const addresses = port.send.mock.calls.map((c: unknown[]) => (c[0] as { address: string }).address)
+		expect(addresses).toEqual(['/zoomRooms/getAddedRoomList', '/zoomRooms/getPairedRoomList'])
 		osc.destroy()
 		jest.advanceTimersByTime(3000)
 		// No additional sends after destroy
-		expect(port.send).toHaveBeenCalledTimes(4)
+		expect(port.send).toHaveBeenCalledTimes(2)
 	})
 
-	it('clears the interval even when destroy is called before first tick', () => {
+	it('fires 2 immediate sends on ready but no interval sends after destroy', () => {
 		const { osc, port } = createPollingOSCInstance()
+		// 2 immediate sends fire on 'ready' before destroy is called
 		osc.destroy()
 		jest.advanceTimersByTime(5000)
-		expect(port.send).not.toHaveBeenCalled()
+		expect(port.send).toHaveBeenCalledTimes(2)
+		const addresses = port.send.mock.calls.map((c: unknown[]) => (c[0] as { address: string }).address)
+		expect(addresses).toEqual(['/zoomRooms/getAddedRoomList', '/zoomRooms/getPairedRoomList'])
 	})
 })
 
