@@ -5,18 +5,11 @@ export interface ZoomRoomsConfig {
 	tx_port: number
 	rx_port: number
 	oscOutputHeader: string
+	pollInterval: number
 }
 
 export function GetConfigFields(): SomeCompanionConfigField[] {
 	return [
-		{
-			type: 'static-text',
-			id: 'info',
-			label: 'CAVZRC OSC',
-			width: 12,
-			value:
-				'Same machine (127.0.0.1) works: both apps use different ports. Match CAVZRC’s OSC Settings: "CAVZRC Receiving Port" = CAVZRC’s Receiving Port (we send commands there). "Companion listen port" = CAVZRC’s Transmission Port (CAVZRC sends feedback there). In CAVZRC set Transmission IP to 127.0.0.1 when both run on this machine.',
-		},
 		{
 			type: 'textinput',
 			id: 'host',
@@ -28,7 +21,7 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 		{
 			type: 'number',
 			id: 'tx_port',
-			label: 'CAVZRC Receiving Port (= CAVZRC’s "Receiving Port", we send commands here)',
+			label: 'Receiving Port',
 			width: 6,
 			default: 9090,
 			min: 1,
@@ -38,7 +31,7 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 		{
 			type: 'number',
 			id: 'rx_port',
-			label: 'Companion listen port (= CAVZRC’s "Transmission Port", 0 = off)',
+			label: 'Transmission Port.  Set to 0 = off)',
 			width: 6,
 			default: 1234,
 			min: 0,
@@ -51,6 +44,20 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 			label: 'OSC output header (must match CAVZRC)',
 			width: 6,
 			default: '/roomosc',
+		},
+		{
+			type: 'dropdown',
+			id: 'pollInterval',
+			label: 'Poll Interval (how often to request room data from CAVZRC)',
+			width: 6,
+			default: 0,
+			choices: [
+				{ id: 0, label: 'Disabled' },
+				{ id: 1000, label: '1 second' },
+				{ id: 2500, label: '2.5 seconds' },
+				{ id: 5000, label: '5 seconds' },
+				{ id: 10000, label: '10 seconds' },
+			],
 		},
 	]
 }

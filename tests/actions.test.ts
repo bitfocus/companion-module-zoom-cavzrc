@@ -188,6 +188,7 @@ describe('GetActions', () => {
 		it('does not double-send', () => {
 			invoke(actions.muteMic, { targetType: 'allRooms' })
 			expect(mockSendCommand).toHaveBeenCalledTimes(1)
+			expect(mockSendCommand).toHaveBeenCalledWith('/zoomRooms/allRooms/muteMic', [])
 		})
 	})
 

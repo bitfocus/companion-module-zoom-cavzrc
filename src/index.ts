@@ -4,7 +4,7 @@ import { GetActions } from './actions.js'
 import { GetFeedbacks } from './feedback.js'
 import { GetPresetList } from './presets.js'
 import { OSC } from './osc.js'
-import type { ZoomRoomsInstance } from './osc.js'
+import type { ZoomRoomsInstance } from './utils.js'
 import { createDefaultState } from './utils.js'
 import { initVariableDefinitions } from './variables/variable-definitions.js'
 import { updateVariableValues } from './variables/variable-values.js'
@@ -16,6 +16,7 @@ class ZoomRoomsInstanceImpl extends InstanceBase<ZoomRoomsConfig> implements Zoo
 		tx_port: 9090,
 		rx_port: 1234,
 		oscOutputHeader: '/roomosc',
+		pollInterval: 1000,
 	}
 
 	public state = createDefaultState()

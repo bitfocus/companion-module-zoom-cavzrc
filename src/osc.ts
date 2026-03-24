@@ -1,23 +1,23 @@
-import { InstanceStatus, type InstanceBase } from '@companion-module/base'
-import type { ZoomRoomsConfig } from './config.js'
-import type { CavzrcState } from './utils.js'
-const osc = require('osc') // eslint-disable-line
-const dgram = require('dgram') // eslint-disable-line
-export interface ZoomRoomsInstance extends InstanceBase<ZoomRoomsConfig> {
-	config: ZoomRoomsConfig
-	state: CavzrcState
-	OSC: OSC | null
-	updateVariableValues: () => void
-}
+import { InstanceStatus } from '@companion-module/base'
+import type { CompanionVariableValues } from '@companion-module/base'
+import { UDPPort } from 'osc'
+import type { OscArgument } from 'osc'
+import type { ZoomRoomsInstance } from './utils.js'
+import {
+	updateAddedRoomsCount,
+	updatePairedRoomsCount,
+	updateAddedRoomsList,
+	updatePairedRoomsList,
+} from './variables/variable-values.js'
+import { FeedbackIdRoomStatus } from './feedbacks/feedback-room-status.js'
 
 export class OSC {
 	private readonly instance: ZoomRoomsInstance
-	private udpSocket: import('dgram').Socket | null = null
-	private sendSocket: import('dgram').Socket | null = null
+	private udpPort: UDPPort | null = null
+	private pollInterval: ReturnType<typeof setInterval> | null = null
 
 	constructor(instance: ZoomRoomsInstance) {
 		this.instance = instance
-		this.sendSocket = dgram.createSocket({ type: 'udp4' })
 		this.connect()
 	}
 
@@ -39,57 +39,78 @@ export class OSC {
 	}
 
 	public sendCommand(path: string, args: (string | number | boolean)[] = []): void {
-		const oscArgs = args.map((a) => (typeof a === 'boolean' ? (a ? 1 : 0) : a))
-		const msg = { address: path.startsWith('/') ? path : `/${path}`, args: oscArgs }
-		let buf: Buffer
-		try {
-			buf = Buffer.from(osc.writeMessage(msg))
-		} catch (e) {
-			this.instance.log('error', `OSC encode error: ${String(e)}`)
-			return
-		}
-		if (!this.sendSocket) return
-		this.sendSocket.send(buf, 0, buf.length, this.txPort, this.host, (err) => {
-			if (err) this.instance.log('error', `OSC send error: ${err.message}`)
+		this.instance.log('debug', `Sending OSC command: ${path} ${JSON.stringify(args)}`)
+		if (!this.udpPort) return
+		const oscArgs = args.map((a) => {
+			if (typeof a === 'boolean') return { type: 'i', value: a ? 1 : 0 }
+			if (typeof a === 'number') return Number.isInteger(a) ? { type: 'i', value: a } : { type: 'f', value: a }
+			return { type: 's', value: String(a) }
 		})
+		try {
+			this.udpPort.send({ address: path.startsWith('/') ? path : `/${path}`, args: oscArgs })
+		} catch (e) {
+			this.instance.log('error', `OSC send error: ${String(e)}`)
+		}
 	}
 
 	private connect(): void {
-		if (this.rxPort <= 0) {
+		const rxPort = this.rxPort
+		if (rxPort <= 0) {
 			this.instance.log('info', 'rx_port is 0; not listening for OSC outputs')
-			return
 		}
 
-		const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
-		this.udpSocket = socket
-		socket.on('error', (err: Error & { code?: string }) => {
+		const port = new UDPPort({
+			localAddress: '0.0.0.0',
+			localPort: rxPort > 0 ? rxPort : 0,
+			remoteAddress: this.host,
+			remotePort: this.txPort,
+			metadata: true,
+		})
+		this.udpPort = port
+
+		port.on('error', (err: Error) => {
 			this.instance.updateStatus(InstanceStatus.UnknownError, `OSC socket error: ${err.message}`)
-			if (err.code === 'EADDRINUSE') {
+			if ((err as Error & { code?: string }).code === 'EADDRINUSE') {
 				this.instance.log(
 					'error',
-					`Port ${this.rxPort} is already in use. Choose a different "Companion listen port" in this connection's config, or close the other app using that port.`,
+					`Port ${rxPort} is already in use. Choose a different "Companion listen port" in this connection's config, or close the other app using that port.`,
 				)
 			} else {
 				this.instance.log('error', `OSC socket error: ${err.message}`)
 			}
 		})
-		socket.on('message', (msg: Buffer) => {
-			try {
-				const packet = osc.readPacket(msg, { metadata: true })
-				if (packet && packet.address) {
-					this.handleMessage(packet.address, packet.args || [])
+
+		if (rxPort > 0) {
+			port.on('message', (msg) => {
+				this.handleMessage(msg.address, msg.args)
+			})
+			port.on('ready', () => {
+				this.instance.log('info', `Listening for CAVZRC OSC on port ${rxPort}`)
+				this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${rxPort}`)
+
+				this.sendCommand('/zoomRooms/getAddedRoomList', [])
+				this.sendCommand('/zoomRooms/getPairedRoomList', [])
+
+				if (this.instance.config.pollInterval && this.instance.config.pollInterval > 0) {
+					this.pollInterval = setInterval(() => {
+						this.sendCommand('/zoomRooms/getAddedRoomList', [])
+						this.sendCommand('/zoomRooms/getPairedRoomList', [])
+						// this.sendCommand('/zoomRooms/getAddedRoomCount', [])
+						// this.sendCommand('/zoomRooms/getPairedRoomCount', [])
+					}, this.instance.config.pollInterval ?? 1000)
+				} else {
+					this.instance.log('info', 'Polling for room data is disabled (pollInterval is 0)')
 				}
-			} catch (e) {
-				this.instance.log('debug', `OSC parse error: ${String(e)}`)
-			}
-		})
-		socket.bind({ port: this.rxPort, address: '0.0.0.0' }, () => {
-			this.instance.log('info', `Listening for CAVZRC OSC on port ${this.rxPort}`)
-			this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${this.rxPort}`)
-		})
+			})
+		} else {
+			this.instance.updateStatus(InstanceStatus.Ok, `Not listening for CAVZRC OSC (rx_port is 0)`)
+		}
+
+		port.open()
 	}
 
-	private handleMessage(address: string, args: { type: string; value: unknown }[]): void {
+	private handleMessage(address: string, args: OscArgument[]): void {
+		this.instance.log('debug', `OSC message received: ${address} ${JSON.stringify(args)}`)
 		const header = this.outputHeader
 		if (!address.startsWith(header)) {
 			return
@@ -101,8 +122,9 @@ export class OSC {
 			const count = this.argInt(args, 0)
 			if (count !== undefined) {
 				state.addedRoomsCount = count
-				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
+				const variables: CompanionVariableValues = {}
+				updateAddedRoomsCount(this.instance, variables)
+				this.instance.setVariableValues(variables)
 			}
 			return
 		}
@@ -110,44 +132,47 @@ export class OSC {
 			const count = this.argInt(args, 0)
 			if (count !== undefined) {
 				state.pairedRoomsCount = count
-				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
+				const variables: CompanionVariableValues = {}
+				updatePairedRoomsCount(this.instance, variables)
+				this.instance.setVariableValues(variables)
 			}
 			return
 		}
-		if (path === 'addedRoomsList') {
+		if (path === 'addedRoomList') {
 			const maxList = this.argInt(args, 0)
 			const thisIndex = this.argInt(args, 1)
 			const roomID = this.argStr(args, 2)
 			const roomName = this.argStr(args, 3)
+			state.addedRoomsCount = maxList ?? 0
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
-				while (state.addedRooms.length <= thisIndex) {
-					state.addedRooms.push({ roomID: '', roomName: '', roomIndex: state.addedRooms.length + 1 })
+				const exists = state.addedRooms.some((r) => r.roomID === roomID)
+				if (!exists) {
+					state.addedRooms.push({ roomID, roomName, roomIndex: thisIndex + 1 })
 				}
-				state.addedRooms[thisIndex] = { roomID, roomName, roomIndex: thisIndex + 1 }
-				if (thisIndex === (maxList ?? 1) - 1) {
-					state.addedRooms = state.addedRooms.slice(0, maxList ?? thisIndex + 1)
-					this.instance.updateVariableValues()
-					this.instance.checkFeedbacks()
-				}
+				const variables: CompanionVariableValues = {}
+				updateAddedRoomsList(this.instance, variables)
+				updateAddedRoomsCount(this.instance, variables)
+				this.instance.setVariableValues(variables)
 			}
 			return
 		}
-		if (path === 'pairedRoomsList') {
+		if (path === 'pairedRoomList') {
 			const maxList = this.argInt(args, 0)
 			const thisIndex = this.argInt(args, 1)
 			const roomID = this.argStr(args, 2)
 			const roomName = this.argStr(args, 3)
+			state.pairedRoomsCount = maxList ?? 0
+
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
-				while (state.pairedRooms.length <= thisIndex) {
-					state.pairedRooms.push({ roomID: '', roomName: '', roomIndex: state.pairedRooms.length + 1 })
+				const exists = state.pairedRooms.some((r) => r.roomID === roomID)
+				if (!exists) {
+					state.pairedRooms.push({ roomID, roomName, roomIndex: thisIndex + 1 })
 				}
-				state.pairedRooms[thisIndex] = { roomID, roomName, roomIndex: thisIndex + 1 }
-				if (thisIndex === (maxList ?? 1) - 1) {
-					state.pairedRooms = state.pairedRooms.slice(0, maxList ?? thisIndex + 1)
-					this.instance.updateVariableValues()
-					this.instance.checkFeedbacks()
-				}
+				const variables: CompanionVariableValues = {}
+				updatePairedRoomsList(this.instance, variables)
+				updatePairedRoomsCount(this.instance, variables)
+				this.instance.setVariableValues(variables)
+				this.instance.checkFeedbacks(FeedbackIdRoomStatus.RoomPaired)
 			}
 			return
 		}
@@ -168,21 +193,20 @@ export class OSC {
 			if (path === 'meetingStatus') {
 				room.meetingStatus = this.argStr(args, 3)
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
+				this.instance.checkFeedbacks(FeedbackIdRoomStatus.InMeeting)
 			} else if (path === 'participantCount') {
 				room.participantCount = this.argInt(args, 3)
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
 			} else if (path === 'muteStatus') {
 				const v = args[3]
 				room.muteStatus = v?.type === 'i' ? (v as { value: number }).value === 1 : (v as { value: boolean })?.value
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
+				this.instance.checkFeedbacks(FeedbackIdRoomStatus.MuteStatus)
 			} else if (path === 'cameraStatus') {
 				const v = args[3]
 				room.cameraStatus = v?.type === 'i' ? (v as { value: number }).value === 1 : (v as { value: boolean })?.value
 				this.instance.updateVariableValues()
-				this.instance.checkFeedbacks()
+				this.instance.checkFeedbacks(FeedbackIdRoomStatus.CameraStatus)
 			} else if (path === 'selectedPrimaryCamera') {
 				room.selectedPrimaryCamera = this.argStr(args, 3)
 				this.instance.updateVariableValues()
@@ -196,7 +220,7 @@ export class OSC {
 		}
 	}
 
-	private argStr(args: { type: string; value: unknown }[], i: number): string | undefined {
+	private argStr(args: OscArgument[], i: number): string | undefined {
 		const a = args[i]
 		if (!a) return undefined
 		if (typeof a.value === 'string') return a.value
@@ -204,7 +228,7 @@ export class OSC {
 		return undefined
 	}
 
-	private argInt(args: { type: string; value: unknown }[], i: number): number | undefined {
+	private argInt(args: OscArgument[], i: number): number | undefined {
 		const a = args[i]
 		if (!a) return undefined
 		if (typeof a.value === 'number') return a.value
@@ -213,13 +237,13 @@ export class OSC {
 	}
 
 	public destroy(): void {
-		if (this.udpSocket) {
-			this.udpSocket.close()
-			this.udpSocket = null
+		if (this.pollInterval !== null) {
+			clearInterval(this.pollInterval)
+			this.pollInterval = null
 		}
-		if (this.sendSocket) {
-			this.sendSocket.close()
-			this.sendSocket = null
+		if (this.udpPort) {
+			this.udpPort.close()
+			this.udpPort = null
 		}
 	}
 }
