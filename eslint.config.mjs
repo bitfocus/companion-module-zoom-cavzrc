@@ -6,9 +6,10 @@ const baseConfig = await generateEslintConfig({
 })
 
 const customConfig = [
+	{ ignores: ['.squad/**'] },
 	...baseConfig,
 	{
-		files: ['!.squad/**', 'src/**/*.ts', 'src/**/*.js', 'src/**/*.mjs', 'tests/**/*.ts', 'jest.config.ts'],
+		files: ['src/**/*.ts', 'src/**/*.js', 'src/**/*.mjs', 'tests/**/*.ts', 'jest.config.ts'],
 	},
 	{
 		files: ['tests/**/*.ts'],
