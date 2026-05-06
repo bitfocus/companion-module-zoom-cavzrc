@@ -11,10 +11,13 @@ import {
 } from './variables/variable-values.js'
 import { FeedbackIdRoomStatus } from './feedbacks/feedback-room-status.js'
 
+const JOIN_COOLDOWN_MS = 10_000
+
 export class OSC {
 	private readonly instance: ZoomRoomsInstance
 	private udpPort: UDPPort | null = null
 	private pollInterval: ReturnType<typeof setInterval> | null = null
+	private lastJoinAttempt: Map<string, number> = new Map()
 
 	constructor(instance: ZoomRoomsInstance) {
 		this.instance = instance
@@ -36,6 +39,23 @@ export class OSC {
 	private get outputHeader(): string {
 		const h = this.instance.config.oscOutputHeader || '/roomosc'
 		return h.startsWith('/') ? h : `/${h}`
+	}
+
+	public canAttemptJoin(targetKey: string): boolean {
+		const last = this.lastJoinAttempt.get(targetKey)
+		return last === undefined || Date.now() - last >= JOIN_COOLDOWN_MS
+	}
+
+	public recordJoinAttempt(targetKey: string): void {
+		this.lastJoinAttempt.set(targetKey, Date.now())
+	}
+
+	public resetJoinAttempts(targetKey?: string): void {
+		if (targetKey !== undefined) {
+			this.lastJoinAttempt.delete(targetKey)
+		} else {
+			this.lastJoinAttempt.clear()
+		}
 	}
 
 	public sendCommand(path: string, args: (string | number | boolean)[] = []): void {
@@ -192,6 +212,10 @@ export class OSC {
 
 			if (path === 'meetingStatus') {
 				room.meetingStatus = this.argStr(args, 3)
+				const status = (room.meetingStatus || '').toLowerCase()
+				if (status !== '' && status !== 'not in meeting' && status !== 'idle') {
+					this.lastJoinAttempt.clear()
+				}
 				this.instance.updateVariableValues()
 				this.instance.checkFeedbacks(FeedbackIdRoomStatus.InMeeting)
 			} else if (path === 'participantCount') {

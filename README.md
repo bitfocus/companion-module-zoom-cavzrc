@@ -31,9 +31,10 @@ The module exposes CAVZRC’s OSC controls so you can drive Zoom Rooms from Comp
 
 ### Join / leave
 
-- **Join meeting** — Join by meeting ID (and optional password, user name). Target one room or all rooms.
+- **Join meeting** — Join by meeting ID (and optional password, user name). Target one room or all rooms. A 10-second cooldown is enforced between join attempts for the same room target to prevent Zoom from locking the room out after repeated wrong-passcode attempts (see [Join attempt rate limiting](#join-attempt-rate-limiting) below).
 - **Start meeting** — Start an instant meeting. Target one room or all rooms.
 - **Leave meeting** — Leave the current meeting. Target one room or all rooms.
+- **Reset join attempt limit** — Immediately clear the join cooldown for a specific room target or all rooms, allowing a new attempt without waiting.
 
 ### Room list (global)
 
@@ -111,6 +112,30 @@ Updated from CAVZRC when the **Companion listen port** is set (non-zero):
 - **room_1** … **room_10** — Per-room: **id**, **name**, **meeting_status**, **participant_count**, **mute** (Muted/Unmuted), **camera** (On/Off).
 
 Use these in button labels, stream deck text, or conditional logic.
+
+---
+
+## Join attempt rate limiting
+
+When a **Join meeting** action is triggered with an incorrect passcode, Zoom Rooms caches the bad passcode and CAVZRC may retry the join internally. If this happens too many times, Zoom locks the room out of that meeting entirely — even blocking subsequent manual join attempts from the room controller.
+
+To prevent this, the module enforces a **10-second cooldown per room target** after each join attempt. If a second join command arrives for the same target within 10 seconds (e.g. from a held button, a rapid trigger, or an automation), it is silently dropped and a warning is logged in Companion.
+
+The cooldown resets automatically when the room successfully enters a meeting. It can also be cleared immediately using the **Reset join attempt limit** action, which is useful when you have corrected a wrong passcode and want to retry without waiting.
+
+> **Note:** The cooldown prevents Companion from spamming join commands, but it cannot prevent CAVZRC from retrying internally after receiving a single command. If you enter a wrong passcode, Zoom Rooms will cache it. Clearing that cached passcode requires action on the machine running Zoom Rooms — it is not something the Companion module can control.
+
+### Clearing a cached wrong passcode
+
+If a bad passcode has been cached and manual join attempts fail before you can enter a new passcode, clear the Zoom app cache on the machine running Zoom Rooms:
+
+1. Click the **Finder** icon in the Dock (or press **⌘ + Space** and search for Finder).
+2. In the menu bar, click **Go** → **Go to Folder**.
+3. Enter `/Library/Application Support/zoom.us` and press Return.
+4. Right-click the **data** folder and select **Move to Trash**.
+5. Restart Zoom Rooms.
+
+This removes the locally cached meeting credentials and allows a clean join attempt.
 
 ---
 

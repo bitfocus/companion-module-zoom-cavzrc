@@ -1,11 +1,12 @@
 import type { CompanionActionDefinition } from '@companion-module/base'
 import type { ZoomRoomsInstance } from '../utils.js'
-import { ROOM_TARGET_OPTIONS, roomCommand, roomCommandWithOpts } from './action-room-utils.js'
+import { ROOM_TARGET_OPTIONS, buildRoomPath, getRoomTarget, roomCommand } from './action-room-utils.js'
 
 export enum ActionIdJoinFlow {
 	joinMeeting = 'joinMeeting',
 	startMeeting = 'startMeeting',
 	leaveMeeting = 'leaveMeeting',
+	resetJoinAttempts = 'resetJoinAttempts',
 }
 
 export function GetActionsJoinFlow(instance: ZoomRoomsInstance): {
@@ -20,11 +21,30 @@ export function GetActionsJoinFlow(instance: ZoomRoomsInstance): {
 				{ type: 'textinput', label: 'Meeting password', id: 'meetingPass', default: '' },
 				{ type: 'textinput', label: 'User name', id: 'userName', default: '' },
 			],
-			callback: roomCommandWithOpts(instance, 'joinMeeting', (o) => [
-				typeof o.meetingID === 'string' ? o.meetingID : '',
-				typeof o.meetingPass === 'string' ? o.meetingPass : '',
-				typeof o.userName === 'string' ? o.userName : '',
-			]),
+			callback: (action) => {
+				try {
+					const opt = action.options
+					const { targetType, roomArg } = getRoomTarget(opt)
+					const targetKey = `${targetType}:${roomArg ?? 'allRooms'}`
+					if (!instance.OSC?.canAttemptJoin(targetKey)) {
+						instance.log(
+							'warn',
+							`Join meeting blocked for ${targetKey}: a join was already attempted in the last 10 seconds. Wait or use "Reset join attempt limit" to send immediately.`,
+						)
+						return
+					}
+					const { path, args } = buildRoomPath(targetType, 'joinMeeting', roomArg)
+					instance.OSC.recordJoinAttempt(targetKey)
+					instance.OSC.sendCommand(path, [
+						...args,
+						typeof opt.meetingID === 'string' ? opt.meetingID : '',
+						typeof opt.meetingPass === 'string' ? opt.meetingPass : '',
+						typeof opt.userName === 'string' ? opt.userName : '',
+					])
+				} catch (e) {
+					instance.log('error', `Error for joinMeeting. ${e instanceof Error ? e.message : String(e)}`)
+				}
+			},
 		},
 
 		[ActionIdJoinFlow.startMeeting]: {
@@ -37,6 +57,41 @@ export function GetActionsJoinFlow(instance: ZoomRoomsInstance): {
 			name: 'Leave meeting',
 			options: [...ROOM_TARGET_OPTIONS],
 			callback: roomCommand(instance, 'leaveMeeting'),
+		},
+
+		[ActionIdJoinFlow.resetJoinAttempts]: {
+			name: 'Reset join attempt limit',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Reset scope',
+					id: 'scope',
+					default: 'all',
+					choices: [
+						{ id: 'all', label: 'All rooms' },
+						{ id: 'target', label: 'Specific room target' },
+					],
+				},
+				...ROOM_TARGET_OPTIONS.map((opt) => ({
+					...opt,
+					isVisible: (o: Record<string, unknown>) =>
+						o.scope === 'target' && ('isVisible' in opt ? (opt.isVisible as (o: Record<string, unknown>) => boolean)(o) : true),
+				})),
+			],
+			callback: (action) => {
+				const opt = action.options
+				if (opt.scope === 'all') {
+					instance.OSC?.resetJoinAttempts()
+				} else {
+					try {
+						const { targetType, roomArg } = getRoomTarget(opt)
+						const targetKey = `${targetType}:${roomArg ?? 'allRooms'}`
+						instance.OSC?.resetJoinAttempts(targetKey)
+					} catch (e) {
+						instance.log('error', `Error for resetJoinAttempts. ${e instanceof Error ? e.message : String(e)}`)
+					}
+				}
+			},
 		},
 	}
 
