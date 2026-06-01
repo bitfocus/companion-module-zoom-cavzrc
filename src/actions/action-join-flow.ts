@@ -16,8 +16,8 @@ export function GetActionsJoinFlow(instance: ZoomRoomsInstance): {
 			name: 'Join meeting',
 			options: [
 				...ROOM_TARGET_OPTIONS,
-				{ type: 'textinput', label: 'Meeting ID', id: 'meetingID', default: '' },
-				{ type: 'textinput', label: 'Meeting password', id: 'meetingPass', default: '' },
+				{ type: 'textinput', label: 'Meeting ID', id: 'meetingID', default: '', useVariables: true },
+				{ type: 'textinput', label: 'Meeting password', id: 'meetingPass', default: '', useVariables: true },
 				{ type: 'textinput', label: 'User name', id: 'userName', default: '' },
 			],
 			callback: roomCommandWithOpts(instance, 'joinMeeting', (o) => [
