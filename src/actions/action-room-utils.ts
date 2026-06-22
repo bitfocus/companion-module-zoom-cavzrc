@@ -95,7 +95,11 @@ export function getRoomTarget(opt: Record<string, unknown>): {
 	return { targetType, roomArg }
 }
 
-export function roomCommand(instance: ZoomRoomsInstance, command: string, extraArgs: (string | number)[] = []) {
+export function roomCommand(
+	instance: ZoomRoomsInstance,
+	command: string,
+	extraArgs: (string | number)[] = [],
+): (action: { options: Record<string, unknown> }) => void {
 	return (action: { options: Record<string, unknown> }) => {
 		try {
 			const opt = action.options
@@ -112,7 +116,7 @@ export function roomCommandWithOpts(
 	instance: ZoomRoomsInstance,
 	command: string,
 	getExtra: (opt: Record<string, unknown>) => (string | number)[],
-) {
+): (action: { options: Record<string, unknown> }) => void {
 	return (action: { options: Record<string, unknown> }) => {
 		try {
 			const opt = action.options
