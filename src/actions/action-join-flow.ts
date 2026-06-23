@@ -20,10 +20,10 @@ export function GetActionsJoinFlow(instance: ZoomRoomsInstance): {
 				{ type: 'textinput', label: 'Meeting password', id: 'meetingPass', default: '', useVariables: true },
 				{ type: 'textinput', label: 'User name', id: 'userName', default: '', useVariables: true },
 			],
-			callback: roomCommandWithOpts(instance, 'joinMeeting', (o) => [
-				typeof o.meetingID === 'string' ? o.meetingID : '',
-				typeof o.meetingPass === 'string' ? o.meetingPass : '',
-				typeof o.userName === 'string' ? o.userName : '',
+			callback: roomCommandWithOpts(instance, 'joinMeeting', async (o, context) => [
+				await context.parseVariablesInString(typeof o.meetingID === 'string' ? o.meetingID : ''),
+				await context.parseVariablesInString(typeof o.meetingPass === 'string' ? o.meetingPass : ''),
+				await context.parseVariablesInString(typeof o.userName === 'string' ? o.userName : ''),
 			]),
 		},
 

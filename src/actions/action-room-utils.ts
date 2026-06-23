@@ -1,4 +1,4 @@
-import type { SomeCompanionActionInputField } from '@companion-module/base'
+import type { CompanionActionContext, SomeCompanionActionInputField } from '@companion-module/base'
 import type { ZoomRoomsInstance } from '../utils.js'
 import type { TargetType } from '../utils.js'
 
@@ -111,14 +111,14 @@ export function roomCommand(instance: ZoomRoomsInstance, command: string, extraA
 export function roomCommandWithOpts(
 	instance: ZoomRoomsInstance,
 	command: string,
-	getExtra: (opt: Record<string, unknown>) => (string | number)[],
+	getExtra: (opt: Record<string, unknown>, context: CompanionActionContext) => Promise<(string | number)[]> | (string | number)[],
 ) {
-	return (action: { options: Record<string, unknown> }) => {
+	return async (action: { options: Record<string, unknown> }, context: CompanionActionContext) => {
 		try {
 			const opt = action.options
 			const { targetType, roomArg } = getRoomTarget(opt)
 			const { path, args } = buildRoomPath(targetType, command, roomArg)
-			instance.OSC?.sendCommand(path, [...args, ...getExtra(opt)])
+			instance.OSC?.sendCommand(path, [...args, ...(await getExtra(opt, context))])
 		} catch (e) {
 			instance.log('error', `Error for ${command}.  ${e instanceof Error ? e.message : String(e)}`)
 		}
