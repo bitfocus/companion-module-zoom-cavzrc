@@ -9,6 +9,9 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+- ESLint flat config ignores must use a dedicated `{ ignores: ['...'] }` object as a top-level array entry. The `files: ['!pattern']` negation syntax does NOT work as an exclude in flat config — it's silently ignored. Always use the `ignores` key for exclusions.
+- `roomCommand` and `roomCommandWithOpts` in `action-room-utils.ts` must have explicit return type `(action: { options: Record<string, unknown> }) => void` per the `@typescript-eslint/explicit-module-boundary-types` rule. This must be maintained any time these functions are modified.
+
 - `roomIndex` in `ROOM_TARGET_OPTIONS` is a `textinput` with `useVariables: true`, so `opt.roomIndex` is a string at runtime. The `parseRoomIndex()` helper in `src/actions.ts` converts it to an integer clamped to 1–999 (rounding, with bounds fallback). Always use `parseRoomIndex()` when consuming `opt.roomIndex` as a number.
 - `parseRoomIndex()` now **throws** `Error` on invalid input (non-finite, < 1, or > 999) instead of silently clamping. Both `roomCommand` and `roomCommandWithOpts` catch that error and call `instance.log('error', message)` so the user sees a clear Companion log entry. Any future action callback that calls `getRoomTarget()` directly must also wrap in try/catch with the same pattern.
 - Actions are being split into per-category files in `src/actions/`. The pilot split extracted Join Flow actions to `src/actions/action-join-flow.ts`. Shared OSC helpers (`ROOM_TARGET_OPTIONS`, `CHANNEL_NUM_OPTION`, `parseRoomIndex`, `buildRoomPath`, `getRoomTarget`, `roomCommand`, `roomCommandWithOpts`) live in `src/actions/action-room-utils.ts`. `roomCommand` and `roomCommandWithOpts` now take `instance` as their first parameter (no longer closures). The aggregator `actions.ts` imports helpers from the utils file and spreads each category factory's result into its return object.

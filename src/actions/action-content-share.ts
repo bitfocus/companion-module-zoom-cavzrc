@@ -20,10 +20,7 @@ export function GetActionsContentShare(instance: ZoomRoomsInstance): {
 
 		[ActionIdContentShare.startCameraShare]: {
 			name: 'Start camera share',
-			options: [
-				...ROOM_TARGET_OPTIONS,
-				{ type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' },
-			],
+			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Camera name', id: 'camera_name', default: '' }],
 			callback: roomCommandWithOpts(instance, 'startCameraShare', (o) => [
 				typeof o.camera_name === 'string' ? o.camera_name : '',
 			]),

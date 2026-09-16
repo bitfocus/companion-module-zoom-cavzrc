@@ -29,9 +29,7 @@ export function GetActionsDeviceSettings(instance: ZoomRoomsInstance): {
 		[ActionIdDeviceSettings.setRoomMic]: {
 			name: 'Set room mic',
 			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Mic name', id: 'mic_name', default: '' }],
-			callback: roomCommandWithOpts(instance, 'setRoomMic', (o) => [
-				typeof o.mic_name === 'string' ? o.mic_name : '',
-			]),
+			callback: roomCommandWithOpts(instance, 'setRoomMic', (o) => [typeof o.mic_name === 'string' ? o.mic_name : '']),
 		},
 
 		[ActionIdDeviceSettings.setRoomMainCamera]: {
@@ -60,10 +58,7 @@ export function GetActionsDeviceSettings(instance: ZoomRoomsInstance): {
 
 		[ActionIdDeviceSettings.setRoomSpeaker]: {
 			name: 'Set room speaker',
-			options: [
-				...ROOM_TARGET_OPTIONS,
-				{ type: 'textinput', label: 'Speaker name', id: 'speaker_name', default: '' },
-			],
+			options: [...ROOM_TARGET_OPTIONS, { type: 'textinput', label: 'Speaker name', id: 'speaker_name', default: '' }],
 			callback: roomCommandWithOpts(instance, 'setRoomSpeaker', (o) => [
 				typeof o.speaker_name === 'string' ? o.speaker_name : '',
 			]),
