@@ -17,6 +17,7 @@ class ZoomRoomsInstanceImpl extends InstanceBase<ZoomRoomsConfig> implements Zoo
 		rx_port: 1234,
 		oscOutputHeader: '/roomosc',
 		pollInterval: 1000,
+		roomListInterval: 0,
 	}
 
 	public state = createDefaultState()
