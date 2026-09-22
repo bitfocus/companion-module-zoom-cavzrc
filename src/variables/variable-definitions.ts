@@ -10,6 +10,7 @@ export function initVariableDefinitions(instance: ZoomRoomsInstance): void {
 	]
 	for (let n = 1; n <= 10; n++) {
 		definitions.push({ variableId: `room_${n}_id`, name: `Room ${n} ID` })
+		definitions.push({ variableId: `room_${n}_cavzrc_index`, name: `Room ${n} CAVZRC list index` })
 		definitions.push({ variableId: `room_${n}_name`, name: `Room ${n} name` })
 		definitions.push({ variableId: `room_${n}_meeting_status`, name: `Room ${n} meeting status` })
 		definitions.push({ variableId: `room_${n}_participant_count`, name: `Room ${n} participant count` })
