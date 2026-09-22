@@ -17,6 +17,7 @@ export class OSC {
 	private readonly instance: ZoomRoomsInstance
 	private udpPort: UDPPort | null = null
 	private pollInterval: ReturnType<typeof setInterval> | null = null
+	private roomListInterval: ReturnType<typeof setInterval> | null = null
 	private lastJoinAttempt: Map<string, number> = new Map()
 
 	constructor(instance: ZoomRoomsInstance) {
@@ -44,6 +45,26 @@ export class OSC {
 	public canAttemptJoin(targetKey: string): boolean {
 		const last = this.lastJoinAttempt.get(targetKey)
 		return last === undefined || Date.now() - last >= JOIN_COOLDOWN_MS
+	}
+
+	/**
+	 * Request the live per-room data that changes during a meeting:
+	 * participant count and meeting status, addressed by room ID, plus a
+	 * paired-room-list refresh so lost UDP replies can recover.
+	 */
+	public pollOnce(): void {
+		this.sendCommand('/zoomRooms/getPairedRoomList', [])
+		for (const room of this.instance.state.pairedRooms) {
+			if (!room.roomID) continue
+			this.sendCommand('/zoomRooms/roomID/getParticipantCount', [room.roomID])
+			this.sendCommand('/zoomRooms/roomID/getMeetingStatus', [room.roomID])
+		}
+	}
+
+	/** Request both room lists. Called on connect and on the optional slow timer. */
+	public requestRoomLists(): void {
+		this.sendCommand('/zoomRooms/getAddedRoomList', [])
+		this.sendCommand('/zoomRooms/getPairedRoomList', [])
 	}
 
 	public recordJoinAttempt(targetKey: string): void {
@@ -108,18 +129,21 @@ export class OSC {
 				this.instance.log('info', `Listening for CAVZRC OSC on port ${rxPort}`)
 				this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${rxPort}`)
 
-				this.sendCommand('/zoomRooms/getAddedRoomList', [])
-				this.sendCommand('/zoomRooms/getPairedRoomList', [])
+				this.requestRoomLists()
 
 				if (this.instance.config.pollInterval && this.instance.config.pollInterval > 0) {
 					this.pollInterval = setInterval(() => {
-						this.sendCommand('/zoomRooms/getAddedRoomList', [])
-						this.sendCommand('/zoomRooms/getPairedRoomList', [])
-						// this.sendCommand('/zoomRooms/getAddedRoomCount', [])
-						// this.sendCommand('/zoomRooms/getPairedRoomCount', [])
+						this.pollOnce()
 					}, this.instance.config.pollInterval ?? 1000)
 				} else {
 					this.instance.log('info', 'Polling for room data is disabled (pollInterval is 0)')
+				}
+
+				const listInterval = this.instance.config.roomListInterval
+				if (listInterval && listInterval > 0) {
+					this.roomListInterval = setInterval(() => {
+						this.requestRoomLists()
+					}, listInterval)
 				}
 			})
 		} else {
@@ -264,6 +288,10 @@ export class OSC {
 		if (this.pollInterval !== null) {
 			clearInterval(this.pollInterval)
 			this.pollInterval = null
+		}
+		if (this.roomListInterval !== null) {
+			clearInterval(this.roomListInterval)
+			this.roomListInterval = null
 		}
 		if (this.udpPort) {
 			this.udpPort.close()
