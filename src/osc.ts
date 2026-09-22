@@ -191,7 +191,7 @@ export class OSC {
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
 				const exists = state.addedRooms.some((r) => r.roomID === roomID)
 				if (!exists) {
-					state.addedRooms.push({ roomID, roomName, roomIndex: thisIndex + 1 })
+					state.addedRooms.push({ roomID, roomName, roomIndex: thisIndex })
 				}
 				const variables: CompanionVariableValues = {}
 				updateAddedRoomsList(this.instance, variables)
@@ -210,7 +210,7 @@ export class OSC {
 			if (roomID !== undefined && roomName !== undefined && thisIndex !== undefined) {
 				const exists = state.pairedRooms.some((r) => r.roomID === roomID)
 				if (!exists) {
-					state.pairedRooms.push({ roomID, roomName, roomIndex: thisIndex + 1 })
+					state.pairedRooms.push({ roomID, roomName, roomIndex: thisIndex })
 				}
 				const variables: CompanionVariableValues = {}
 				updatePairedRoomsList(this.instance, variables)

@@ -130,7 +130,7 @@ describe('OSC addedRoomList message handler', () => {
 		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/addedRoomList', [
 			makeArg('i', 1),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'room-id-1'),
 			makeArg('s', 'Room One'),
 		])
@@ -142,13 +142,13 @@ describe('OSC addedRoomList message handler', () => {
 		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/addedRoomList', [
 			makeArg('i', 1),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'room-id-1'),
 			makeArg('s', 'Room One'),
 		])
 		triggerMessage(port, '/roomosc/addedRoomList', [
 			makeArg('i', 1),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'room-id-1'),
 			makeArg('s', 'Room One'),
 		])
@@ -159,7 +159,7 @@ describe('OSC addedRoomList message handler', () => {
 		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/addedRoomList', [
 			makeArg('i', 3),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'room-id-1'),
 			makeArg('s', 'Room One'),
 		])
@@ -189,7 +189,7 @@ describe('OSC addedRoomList message handler', () => {
 		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/addedRoomList', [
 			makeArg('i', 1),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'room-id-1'),
 			makeArg('s', 'Room One'),
 		])
@@ -198,7 +198,7 @@ describe('OSC addedRoomList message handler', () => {
 
 	it('does not add when roomID is undefined', () => {
 		const { port, instance } = createOSCInstance(1234)
-		triggerMessage(port, '/roomosc/addedRoomList', [makeArg('i', 1), makeArg('i', 0), makeArg('s', 'Room One')])
+		triggerMessage(port, '/roomosc/addedRoomList', [makeArg('i', 1), makeArg('i', 1), makeArg('s', 'Room One')])
 		expect(instance.state.addedRooms).toHaveLength(0)
 	})
 })
@@ -217,7 +217,7 @@ describe('OSC pairedRoomList message handler', () => {
 		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/pairedRoomList', [
 			makeArg('i', 1),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'paired-id-1'),
 			makeArg('s', 'Paired Room One'),
 		])
@@ -233,13 +233,13 @@ describe('OSC pairedRoomList message handler', () => {
 		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/pairedRoomList', [
 			makeArg('i', 1),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'paired-id-1'),
 			makeArg('s', 'Paired Room One'),
 		])
 		triggerMessage(port, '/roomosc/pairedRoomList', [
 			makeArg('i', 1),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'paired-id-1'),
 			makeArg('s', 'Paired Room One'),
 		])
@@ -250,7 +250,7 @@ describe('OSC pairedRoomList message handler', () => {
 		const { port, instance } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/pairedRoomList', [
 			makeArg('i', 2),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'paired-id-1'),
 			makeArg('s', 'Paired Room One'),
 		])
@@ -273,7 +273,7 @@ describe('OSC pairedRoomList message handler', () => {
 		const { port, instance, mockCheckFeedbacks } = createOSCInstance(1234)
 		triggerMessage(port, '/roomosc/pairedRoomList', [
 			makeArg('i', 1),
-			makeArg('i', 0),
+			makeArg('i', 1),
 			makeArg('s', 'paired-id-1'),
 			makeArg('s', 'Paired Room One'),
 		])
@@ -285,7 +285,7 @@ describe('OSC pairedRoomList message handler', () => {
 
 	it('does not add when roomID is undefined', () => {
 		const { port, instance } = createOSCInstance(1234)
-		triggerMessage(port, '/roomosc/pairedRoomList', [makeArg('i', 1), makeArg('i', 0), makeArg('s', 'Paired Room One')])
+		triggerMessage(port, '/roomosc/pairedRoomList', [makeArg('i', 1), makeArg('i', 1), makeArg('s', 'Paired Room One')])
 		expect(instance.state.pairedRooms).toHaveLength(0)
 	})
 })
