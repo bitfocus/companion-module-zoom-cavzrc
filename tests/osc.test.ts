@@ -289,3 +289,192 @@ describe('OSC pairedRoomList message handler', () => {
 		expect(instance.state.pairedRooms).toHaveLength(0)
 	})
 })
+
+describe('channel config parsing', () => {
+	beforeEach(() => {
+		;(UDPPort as jest.Mock).mockClear()
+	})
+
+	it('parses channelCountNDI/HWIO/Dante into room state', () => {
+		const { port, instance } = createOSCInstance(1234)
+		triggerMessage(port, '/roomosc/channelCountNDI', [
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+			makeArg('i', 1),
+			makeArg('i', 4),
+		])
+		triggerMessage(port, '/roomosc/channelCountHWIO', [
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+			makeArg('i', 1),
+			makeArg('i', 11),
+		])
+		triggerMessage(port, '/roomosc/channelCountDante', [
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+			makeArg('i', 1),
+			makeArg('i', 2),
+		])
+		const room = instance.state.rooms['room-id-1']
+		expect(room?.ndiChannelCount).toBe(4)
+		expect(room?.hwioChannelCount).toBe(11)
+		expect(room?.danteChannelCount).toBe(2)
+	})
+
+	it('parses channelConfigHWIO keyed by channel name', () => {
+		const { port, instance } = createOSCInstance(1234)
+		triggerMessage(port, '/roomosc/channelConfigHWIO', [
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+			makeArg('i', 1),
+			makeArg('T', true),
+			makeArg('s', 'HDMI 3'),
+			makeArg('i', 1),
+			makeArg('i', 2),
+			makeArg('s', 'Presenter'),
+			makeArg('s', '1920x1080p60'),
+			makeArg('i', 1),
+		])
+		const ch = instance.state.rooms['room-id-1']?.hwioChannels?.['HDMI 3']
+		expect(ch).toMatchObject({
+			isActive: true,
+			channelName: 'HDMI 3',
+			mode: 1,
+			content: 2,
+			selection: 'Presenter',
+			resolutionFps: '1920x1080p60',
+			audioMix: 1,
+		})
+	})
+
+	it('parses channelConfigNDI and channelConfigDante by index', () => {
+		const { port, instance } = createOSCInstance(1234)
+		triggerMessage(port, '/roomosc/channelConfigNDI', [
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+			makeArg('i', 1),
+			makeArg('i', 2),
+			makeArg('i', 1),
+			makeArg('s', 'Gallery'),
+			makeArg('s', 'Active Speaker'),
+		])
+		triggerMessage(port, '/roomosc/channelConfigDante', [
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+			makeArg('i', 1),
+			makeArg('i', 1),
+			makeArg('i', 1),
+			makeArg('s', 'Mix'),
+			makeArg('s', 'Program'),
+			makeArg('s', 'Locked'),
+		])
+		const room = instance.state.rooms['room-id-1']
+		expect(room?.ndiChannels?.[2]).toMatchObject({
+			status: 1,
+			content: 'Gallery',
+			selection: 'Active Speaker',
+		})
+		expect(room?.danteChannels?.[1]).toMatchObject({
+			status: 1,
+			content: 'Mix',
+			selection: 'Program',
+			signal: 'Locked',
+		})
+	})
+
+	it('refreshes variable definitions when a new channel first appears', () => {
+		const { port, instance } = createOSCInstance(1234)
+		;(instance as unknown as Record<string, unknown>).refreshVariableDefinitions = jest.fn()
+		const refresh = (instance as unknown as { refreshVariableDefinitions: jest.Mock }).refreshVariableDefinitions
+		triggerMessage(port, '/roomosc/channelConfigHWIO', [
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+			makeArg('i', 1),
+			makeArg('T', true),
+			makeArg('s', 'SDI 7'),
+			makeArg('i', 1),
+			makeArg('i', 0),
+			makeArg('s', ''),
+			makeArg('s', ''),
+			makeArg('i', 0),
+		])
+		triggerMessage(port, '/roomosc/channelConfigHWIO', [
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+			makeArg('i', 1),
+			makeArg('F', false),
+			makeArg('s', 'SDI 7'),
+			makeArg('i', 1),
+			makeArg('i', 0),
+			makeArg('s', ''),
+			makeArg('s', ''),
+			makeArg('i', 0),
+		])
+		expect(refresh).toHaveBeenCalledTimes(1) // only on first appearance
+	})
+})
+
+describe('staleness watchdog', () => {
+	beforeEach(() => {
+		jest.useFakeTimers()
+		;(UDPPort as jest.Mock).mockClear()
+	})
+
+	afterEach(() => {
+		jest.useRealTimers()
+	})
+
+	it('marks connection failed after the configured silence and recovers on message', () => {
+		const { port, instance } = createOSCInstance(1234)
+		;(instance as unknown as Record<string, unknown>).config = {
+			host: '127.0.0.1',
+			tx_port: 9090,
+			rx_port: 1234,
+			oscOutputHeader: '/roomosc',
+			stalenessTimeoutSec: 60,
+		}
+		// fire the port 'ready' handler to start the watchdog
+		const readyHandler = getEventHandler(port, 'ready')
+		readyHandler?.()
+		const updateStatus = instance.updateStatus as jest.Mock
+
+		jest.advanceTimersByTime(61_000)
+		const failedCalls = updateStatus.mock.calls.filter((c) => String(c[1] ?? '').includes('No data from CAVZRC'))
+		expect(failedCalls.length).toBeGreaterThan(0)
+
+		// a message arrives -> status returns to Ok
+		triggerMessage(port, '/roomosc/pairedRoomList', [
+			makeArg('i', 1),
+			makeArg('i', 1),
+			makeArg('s', 'room-id-1'),
+			makeArg('s', 'Room One'),
+		])
+		const okCalls = updateStatus.mock.calls.filter((c) => String(c[1] ?? '').includes('Listening'))
+		expect(okCalls.length).toBeGreaterThan(0)
+	})
+
+	it('does not warn while data keeps arriving', () => {
+		const { port, instance } = createOSCInstance(1234)
+		;(instance as unknown as Record<string, unknown>).config = {
+			host: '127.0.0.1',
+			tx_port: 9090,
+			rx_port: 1234,
+			oscOutputHeader: '/roomosc',
+			stalenessTimeoutSec: 60,
+		}
+		const readyHandler = getEventHandler(port, 'ready')
+		readyHandler?.()
+		const updateStatus = instance.updateStatus as jest.Mock
+		for (let i = 0; i < 12; i++) {
+			jest.advanceTimersByTime(5_000)
+			triggerMessage(port, '/roomosc/pairedRoomList', [
+				makeArg('i', 1),
+				makeArg('i', 1),
+				makeArg('s', 'room-id-1'),
+				makeArg('s', 'Room One'),
+			])
+		}
+		const failedCalls = updateStatus.mock.calls.filter((c) => String(c[1] ?? '').includes('No data from CAVZRC'))
+		expect(failedCalls).toHaveLength(0)
+	})
+})

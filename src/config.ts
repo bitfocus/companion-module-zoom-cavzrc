@@ -7,6 +7,7 @@ export interface ZoomRoomsConfig {
 	oscOutputHeader: string
 	pollInterval: number
 	roomListInterval: number
+	stalenessTimeoutSec: number
 }
 
 export function GetConfigFields(): SomeCompanionConfigField[] {
@@ -71,6 +72,20 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 				{ id: 30000, label: '30 seconds' },
 				{ id: 60000, label: '60 seconds' },
 				{ id: 300000, label: '5 minutes' },
+			],
+		},
+		{
+			type: 'dropdown',
+			id: 'stalenessTimeoutSec',
+			label: 'No-data warning: mark CAVZRC unreachable after',
+			width: 6,
+			default: 60,
+			choices: [
+				{ id: 0, label: 'Disabled' },
+				{ id: 30, label: '30 seconds of silence' },
+				{ id: 60, label: '60 seconds of silence' },
+				{ id: 120, label: '2 minutes of silence' },
+				{ id: 300, label: '5 minutes of silence' },
 			],
 		},
 	]

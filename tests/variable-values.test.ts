@@ -204,3 +204,38 @@ describe('updateVariableValues', () => {
 		expect(vars['room_2_id']).toBe('noIndex')
 	})
 })
+
+describe('channel variables', () => {
+	it('exposes channel counts and HWIO channel details on the room slot', () => {
+		const { instance, setVariableValues } = makeMockInstance({
+			pairedRooms: [{ roomID: 'roomA', roomName: 'Room A', roomIndex: 1 }],
+			rooms: {
+				roomA: {
+					roomID: 'roomA',
+					roomName: 'Room A',
+					roomIndex: 1,
+					hwioChannelCount: 11,
+					hwioChannels: {
+						'HDMI 3': {
+							isActive: true,
+							channelName: 'HDMI 3',
+							mode: 1,
+							content: 2,
+							selection: 'Presenter',
+							resolutionFps: '1920x1080p60',
+							audioMix: 1,
+						},
+					},
+				},
+			},
+		})
+		const { updateVariableValues } = jest.requireActual('../src/variables/variable-values.js')
+		updateVariableValues(instance)
+		const vars = setVariableValues.mock.calls[0][0]
+		expect(vars['room_1_hwio_count']).toBe(11)
+		expect(vars['room_1_hwio_hdmi_3_active']).toBe('Active')
+		expect(vars['room_1_hwio_hdmi_3_selection']).toBe('Presenter')
+		expect(vars['room_1_hwio_hdmi_3_resolution_fps']).toBe('1920x1080p60')
+		expect(vars['room_2_hwio_count']).toBe('—') // ghost slot cleared
+	})
+})

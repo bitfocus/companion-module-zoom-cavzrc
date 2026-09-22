@@ -10,14 +10,19 @@ import {
 	updatePairedRoomsList,
 } from './variables/variable-values.js'
 import { FeedbackIdRoomStatus } from './feedbacks/feedback-room-status.js'
+import { FeedbackIdChannelStatus } from './feedbacks/feedback-channels.js'
 
 const JOIN_COOLDOWN_MS = 10_000
+const STALENESS_CHECK_MS = 10_000
 
 export class OSC {
 	private readonly instance: ZoomRoomsInstance
 	private udpPort: UDPPort | null = null
 	private pollInterval: ReturnType<typeof setInterval> | null = null
 	private roomListInterval: ReturnType<typeof setInterval> | null = null
+	private stalenessInterval: ReturnType<typeof setInterval> | null = null
+	private lastHeardAt: number = Date.now()
+	private staleWarned = false
 	private lastJoinAttempt: Map<string, number> = new Map()
 
 	constructor(instance: ZoomRoomsInstance) {
@@ -123,6 +128,7 @@ export class OSC {
 
 		if (rxPort > 0) {
 			port.on('message', (msg) => {
+				this.markHeard()
 				this.handleMessage(msg.address, msg.args)
 			})
 			port.on('ready', () => {
@@ -144,6 +150,18 @@ export class OSC {
 					this.roomListInterval = setInterval(() => {
 						this.requestRoomLists()
 					}, listInterval)
+				}
+
+				// Staleness watchdog: CAVZRC pushes status on change and replies
+				// to polls. If nothing arrives for stalenessTimeoutSec while we
+				// are listening, warn and probe so a dead/unreachable CAVZRC is
+				// visible instead of silently showing stale room data.
+				const staleMs = (this.instance.config.stalenessTimeoutSec ?? 60) * 1000
+				if (staleMs > 0) {
+					this.lastHeardAt = Date.now()
+					this.stalenessInterval = setInterval(() => {
+						this.checkStaleness(staleMs)
+					}, STALENESS_CHECK_MS)
 				}
 			})
 		} else {
@@ -264,6 +282,63 @@ export class OSC {
 			} else if (path === 'selectedSpeaker') {
 				room.selectedSpeaker = this.argStr(args, 3)
 				this.instance.updateVariableValues()
+			} else if (path === 'channelCountNDI') {
+				room.ndiChannelCount = this.argInt(args, 3) ?? 0
+				this.instance.updateVariableValues()
+			} else if (path === 'channelCountHWIO') {
+				room.hwioChannelCount = this.argInt(args, 3) ?? 0
+				this.instance.updateVariableValues()
+			} else if (path === 'channelCountDante') {
+				room.danteChannelCount = this.argInt(args, 3) ?? 0
+				this.instance.updateVariableValues()
+			} else if (path === 'channelConfigNDI') {
+				// int index, int status, str content, str selection
+				const idx = this.argInt(args, 3)
+				if (idx !== undefined && idx > 0) {
+					room.ndiChannels ??= {}
+					if (!room.ndiChannels[idx]) this.instance.refreshVariableDefinitions()
+					room.ndiChannels[idx] = {
+						status: this.argInt(args, 4) ?? 0,
+						content: this.argStr(args, 5) ?? '',
+						selection: this.argStr(args, 6) ?? '',
+					}
+					this.instance.updateVariableValues()
+				}
+			} else if (path === 'channelConfigHWIO') {
+				// bool isActive, str channel_name, int mode (1=output, 2=input),
+				// int content (dropdown index), str selection,
+				// str resolution_fps, int audio_mix
+				const isActive = this.argBool(args, 3)
+				const channelName = this.argStr(args, 4)
+				if (channelName !== undefined && channelName !== '') {
+					room.hwioChannels ??= {}
+					if (!room.hwioChannels[channelName]) this.instance.refreshVariableDefinitions()
+					room.hwioChannels[channelName] = {
+						isActive: isActive ?? false,
+						channelName,
+						mode: this.argInt(args, 5) ?? 0,
+						content: this.argInt(args, 6) ?? 0,
+						selection: this.argStr(args, 7) ?? '',
+						resolutionFps: this.argStr(args, 8) ?? '',
+						audioMix: this.argInt(args, 9) ?? 0,
+					}
+					this.instance.updateVariableValues()
+					this.instance.checkFeedbacks(FeedbackIdChannelStatus.HwioChannelActive, FeedbackIdChannelStatus.HwioChannelSelection)
+				}
+			} else if (path === 'channelConfigDante') {
+				// int index, int status, str content, str selection, str signal
+				const idx = this.argInt(args, 3)
+				if (idx !== undefined && idx > 0) {
+					room.danteChannels ??= {}
+					if (!room.danteChannels[idx]) this.instance.refreshVariableDefinitions()
+					room.danteChannels[idx] = {
+						status: this.argInt(args, 4) ?? 0,
+						content: this.argStr(args, 5) ?? '',
+						selection: this.argStr(args, 6) ?? '',
+						signal: this.argStr(args, 7) ?? '',
+					}
+					this.instance.updateVariableValues()
+				}
 			}
 		}
 	}
@@ -284,6 +359,46 @@ export class OSC {
 		return undefined
 	}
 
+	private argBool(args: OscArgument[], i: number): boolean | undefined {
+		const a = args[i]
+		if (!a) return undefined
+		if (typeof a.value === 'boolean') return a.value
+		if (typeof a.value === 'number') return a.value === 1
+		if (typeof a.value === 'string') return a.value === 'true' || a.value === '1'
+		return undefined
+	}
+
+	/** Record that CAVZRC is talking to us; clears a staleness warning. */
+	private markHeard(): void {
+		this.lastHeardAt = Date.now()
+		if (this.staleWarned) {
+			this.staleWarned = false
+			const rxPort = this.rxPort
+			this.instance.updateStatus(InstanceStatus.Ok, `Listening for CAVZRC OSC on port ${rxPort}`)
+			this.instance.log('info', 'CAVZRC data resumed')
+		}
+	}
+
+	/** Warn when no OSC has arrived within the timeout; probe for a reply. */
+	private checkStaleness(staleMs: number): void {
+		const silentFor = Date.now() - this.lastHeardAt
+		if (silentFor < staleMs) return
+		if (!this.staleWarned) {
+			this.staleWarned = true
+			const secs = Math.round(silentFor / 1000)
+			this.instance.updateStatus(
+				InstanceStatus.ConnectionFailure,
+				`No data from CAVZRC for ${secs}s — CAVZRC unreachable or OSC output disabled?`,
+			)
+			this.instance.log('warn', `No OSC from CAVZRC for ${secs}s; probing`)
+		}
+		try {
+			this.requestRoomLists() // probe: if CAVZRC is alive we will hear back
+		} catch {
+			/* socket may be gone */
+		}
+	}
+
 	public destroy(): void {
 		if (this.pollInterval !== null) {
 			clearInterval(this.pollInterval)
@@ -292,6 +407,10 @@ export class OSC {
 		if (this.roomListInterval !== null) {
 			clearInterval(this.roomListInterval)
 			this.roomListInterval = null
+		}
+		if (this.stalenessInterval !== null) {
+			clearInterval(this.stalenessInterval)
+			this.stalenessInterval = null
 		}
 		if (this.udpPort) {
 			this.udpPort.close()

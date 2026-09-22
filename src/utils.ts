@@ -10,6 +10,29 @@ export interface RoomInfo {
 	roomIndex: number
 }
 
+export interface NdiChannelConfig {
+	status: number
+	content: string
+	selection: string
+}
+
+export interface HwioChannelConfig {
+	isActive: boolean
+	channelName: string
+	mode: number
+	content: number
+	selection: string
+	resolutionFps: string
+	audioMix: number
+}
+
+export interface DanteChannelConfig {
+	status: number
+	content: string
+	selection: string
+	signal: string
+}
+
 export interface RoomState {
 	roomID: string
 	roomName: string
@@ -21,6 +44,12 @@ export interface RoomState {
 	selectedPrimaryCamera?: string
 	selectedMic?: string
 	selectedSpeaker?: string
+	ndiChannelCount?: number
+	hwioChannelCount?: number
+	danteChannelCount?: number
+	ndiChannels?: Record<number, NdiChannelConfig>
+	hwioChannels?: Record<string, HwioChannelConfig>
+	danteChannels?: Record<number, DanteChannelConfig>
 	overlayConfig?: {
 		namePosition: number
 		showNametag: boolean
@@ -53,4 +82,5 @@ export interface ZoomRoomsInstance extends InstanceBase<ZoomRoomsConfig> {
 	state: CavzrcState
 	OSC: OSC | null
 	updateVariableValues: () => void
+	refreshVariableDefinitions: () => void
 }
