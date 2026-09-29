@@ -1,5 +1,8 @@
 import type { CompanionVariableValues } from '@companion-module/base'
 import type { ZoomRoomsInstance } from '../utils.js'
+import { channelSlug } from './variable-definitions.js'
+
+const MAX_ROOM_SLOTS = 10
 
 export function updateAddedRoomsCount(instance: ZoomRoomsInstance, variables: CompanionVariableValues): void {
 	variables['added_rooms_count'] = instance.state.addedRoomsCount
@@ -32,15 +35,71 @@ export function updateVariableValues(instance: ZoomRoomsInstance): void {
 	updateAddedRoomsList(instance, variables)
 	updatePairedRoomsList(instance, variables)
 	const state = instance.state
-	state.pairedRooms.forEach((r) => {
-		const n = r.roomIndex
+
+	// Assign rooms to slots 1..N positionally, ordered by the CAVZRC list
+	// index. CAVZRC roomIndex values cannot be trusted as direct slot
+	// numbers (they may arrive unordered, out of range, or missing), which
+	// previously landed room data on the wrong room_N_* variables — most
+	// visibly participant counts. Unindexed rooms sort last, deterministically.
+	const sorted = [...state.pairedRooms].sort(
+		(a, b) => (a.roomIndex ?? MAX_ROOM_SLOTS + 1) - (b.roomIndex ?? MAX_ROOM_SLOTS + 1),
+	)
+	sorted.forEach((r, position) => {
+		const n = position + 1
+		if (n > MAX_ROOM_SLOTS) return
 		variables[`room_${n}_id`] = r.roomID
+		variables[`room_${n}_cavzrc_index`] = r.roomIndex ?? '—'
 		variables[`room_${n}_name`] = r.roomName || '—'
 		const room = state.rooms[r.roomID]
 		variables[`room_${n}_meeting_status`] = room?.meetingStatus ?? '—'
 		variables[`room_${n}_participant_count`] = room?.participantCount ?? '—'
 		variables[`room_${n}_mute`] = room?.muteStatus === true ? 'Unmuted' : room?.muteStatus === false ? 'Muted' : '—'
 		variables[`room_${n}_camera`] = room?.cameraStatus === true ? 'On' : room?.cameraStatus === false ? 'Off' : '—'
+		variables[`room_${n}_ndi_count`] = room?.ndiChannelCount ?? '—'
+		variables[`room_${n}_hwio_count`] = room?.hwioChannelCount ?? '—'
+		variables[`room_${n}_dante_count`] = room?.danteChannelCount ?? '—'
+
+		// Channel detail values (definitions are refreshed by osc.ts when a
+		// new channel key first appears; values are written on every update).
+		if (room) {
+			for (const [idx, ch] of Object.entries(room.ndiChannels ?? {})) {
+				variables[`room_${n}_ndi_${idx}_status`] = ch.status
+				variables[`room_${n}_ndi_${idx}_content`] = ch.content || '—'
+				variables[`room_${n}_ndi_${idx}_selection`] = ch.selection || '—'
+			}
+			for (const [name, ch] of Object.entries(room.hwioChannels ?? {})) {
+				const s = channelSlug(name)
+				if (!s) continue
+				variables[`room_${n}_hwio_${s}_active`] = ch.isActive ? 'Active' : 'Inactive'
+				variables[`room_${n}_hwio_${s}_mode`] = ch.mode === 1 ? 'Output' : ch.mode === 2 ? 'Input' : String(ch.mode)
+				variables[`room_${n}_hwio_${s}_content`] = ch.content || 0
+				variables[`room_${n}_hwio_${s}_selection`] = ch.selection || '—'
+				variables[`room_${n}_hwio_${s}_resolution_fps`] = ch.resolutionFps || '—'
+				variables[`room_${n}_hwio_${s}_audio_mix`] = ch.audioMix
+			}
+			for (const [idx, ch] of Object.entries(room.danteChannels ?? {})) {
+				variables[`room_${n}_dante_${idx}_status`] = ch.status
+				variables[`room_${n}_dante_${idx}_content`] = ch.content || '—'
+				variables[`room_${n}_dante_${idx}_selection`] = ch.selection || '—'
+				variables[`room_${n}_dante_${idx}_signal`] = ch.signal || '—'
+			}
+		}
 	})
+
+	// Clear slots above the current room count so removed/unpaired rooms
+	// do not leave stale variables behind.
+	for (let k = sorted.length + 1; k <= MAX_ROOM_SLOTS; k++) {
+		variables[`room_${k}_id`] = '—'
+		variables[`room_${k}_cavzrc_index`] = '—'
+		variables[`room_${k}_name`] = '—'
+		variables[`room_${k}_meeting_status`] = '—'
+		variables[`room_${k}_participant_count`] = '—'
+		variables[`room_${k}_mute`] = '—'
+		variables[`room_${k}_camera`] = '—'
+		variables[`room_${k}_ndi_count`] = '—'
+		variables[`room_${k}_hwio_count`] = '—'
+		variables[`room_${k}_dante_count`] = '—'
+	}
+
 	instance.setVariableValues(variables)
 }

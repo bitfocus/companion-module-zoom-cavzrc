@@ -153,3 +153,89 @@ describe('updatePairedRoomsList', () => {
 		expect(setVariableValues).not.toHaveBeenCalled()
 	})
 })
+
+describe('updateVariableValues', () => {
+	it('assigns slots positionally by sorted CAVZRC index, not by raw roomIndex', () => {
+		const { instance, setVariableValues } = makeMockInstance({
+			pairedRooms: [
+				{ roomID: 'roomB', roomName: 'Room B', roomIndex: 2 },
+				{ roomID: 'roomA', roomName: 'Room A', roomIndex: 1 },
+			],
+			rooms: {
+				roomA: { roomID: 'roomA', roomName: 'Room A', roomIndex: 1, participantCount: 7 },
+				roomB: { roomID: 'roomB', roomName: 'Room B', roomIndex: 2, participantCount: 3 },
+			},
+		})
+		const { updateVariableValues } = jest.requireActual('../src/variables/variable-values.js')
+		updateVariableValues(instance)
+		const vars = setVariableValues.mock.calls[0][0]
+		expect(vars['room_1_id']).toBe('roomA')
+		expect(vars['room_1_participant_count']).toBe(7)
+		expect(vars['room_2_id']).toBe('roomB')
+		expect(vars['room_2_participant_count']).toBe(3)
+		expect(vars['room_1_cavzrc_index']).toBe(1)
+	})
+
+	it('clears stale slots above the current room count', () => {
+		const { instance, setVariableValues } = makeMockInstance({
+			pairedRooms: [{ roomID: 'roomA', roomName: 'Room A', roomIndex: 1 }],
+			rooms: { roomA: { roomID: 'roomA', roomName: 'Room A', roomIndex: 1 } },
+		})
+		const { updateVariableValues } = jest.requireActual('../src/variables/variable-values.js')
+		updateVariableValues(instance as never)
+		const vars = setVariableValues.mock.calls[0][0]
+		expect(vars['room_1_id']).toBe('roomA')
+		expect(vars['room_2_id']).toBe('—')
+		expect(vars['room_2_participant_count']).toBe('—')
+	})
+
+	it('sorts rooms with a missing index after indexed rooms', () => {
+		const { instance, setVariableValues } = makeMockInstance({
+			pairedRooms: [
+				{ roomID: 'noIndex', roomName: 'No Index' } as never,
+				{ roomID: 'roomA', roomName: 'Room A', roomIndex: 1 },
+			],
+			rooms: {},
+		})
+		const { updateVariableValues } = jest.requireActual('../src/variables/variable-values.js')
+		updateVariableValues(instance)
+		const vars = setVariableValues.mock.calls[0][0]
+		expect(vars['room_1_id']).toBe('roomA')
+		expect(vars['room_2_id']).toBe('noIndex')
+	})
+})
+
+describe('channel variables', () => {
+	it('exposes channel counts and HWIO channel details on the room slot', () => {
+		const { instance, setVariableValues } = makeMockInstance({
+			pairedRooms: [{ roomID: 'roomA', roomName: 'Room A', roomIndex: 1 }],
+			rooms: {
+				roomA: {
+					roomID: 'roomA',
+					roomName: 'Room A',
+					roomIndex: 1,
+					hwioChannelCount: 11,
+					hwioChannels: {
+						'HDMI 3': {
+							isActive: true,
+							channelName: 'HDMI 3',
+							mode: 1,
+							content: 2,
+							selection: 'Presenter',
+							resolutionFps: '1920x1080p60',
+							audioMix: 1,
+						},
+					},
+				},
+			},
+		})
+		const { updateVariableValues } = jest.requireActual('../src/variables/variable-values.js')
+		updateVariableValues(instance)
+		const vars = setVariableValues.mock.calls[0][0]
+		expect(vars['room_1_hwio_count']).toBe(11)
+		expect(vars['room_1_hwio_hdmi_3_active']).toBe('Active')
+		expect(vars['room_1_hwio_hdmi_3_selection']).toBe('Presenter')
+		expect(vars['room_1_hwio_hdmi_3_resolution_fps']).toBe('1920x1080p60')
+		expect(vars['room_2_hwio_count']).toBe('—') // ghost slot cleared
+	})
+})

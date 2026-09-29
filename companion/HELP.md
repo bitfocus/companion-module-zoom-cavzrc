@@ -36,3 +36,25 @@ Room-targeted actions can target Zoom Rooms by:
 
 - Zoom Custom AV for Zoom Rooms Controller (CAVZRC) and its OSC API documentation.
 - [Companion developer docs](https://companion.free/for-developers/).
+
+## Channel status (NDI / HWIO / Dante)
+
+CAVZRC reports channel configuration replies (`channelConfig*`, `channelCount*`)
+are parsed into room state and exposed as:
+
+- `room_N_ndi_count` / `room_N_hwio_count` / `room_N_dante_count` — channel counts
+- `room_N_ndi_<index>_status/content/selection` — NDI channel details
+- `room_N_hwio_<name>_active/mode/content/selection/resolution_fps/audio_mix`
+  — HWIO channel details, keyed by the CAVZRC channel name (lowercased,
+  non-alphanumerics become `_`)
+- `room_N_dante_<index>_status/content/selection/signal` — Dante channel details
+
+Feedbacks: "HWIO channel active" and "HWIO channel selection matches" let
+buttons/triggers react to routing changes (e.g. detect a frozen or unrouted
+screen).
+
+## Connection health
+
+"No-data warning" (config): when listening and no OSC arrives from CAVZRC for
+the configured silence window, the connection is marked failed and a probe is
+sent. Data arriving restores the status automatically.
